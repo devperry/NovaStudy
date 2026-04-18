@@ -12,7 +12,7 @@ Bienvenido a SystemTopSchool. Esta no es una simple agenda; es un "Segundo Cereb
 
 ### 🚀 Cómo usarlo
 Simplemente entra al enlace de la aplicación desde tu navegador móvil o de escritorio. No requiere instalación ni crear cuentas.
-👉 **[PON AQUÍ EL LINK DE TU GITHUB PAGES]**
+👉 **[https://devperry.github.io/NovaStudy/]**
 
 ### 🛠️ Tecnologías usadas
 - HTML5, CSS3 (Diseño UI Moderno)
