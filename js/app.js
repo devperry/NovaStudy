@@ -10,11 +10,10 @@ const App = {
         Store.init();
         UI.renderNav(Store.state.materias);
         UI.renderSelectMaterias(Store.state.materias);
-        
         this.renderDashboard();
         
-        prompt("[Debbung, Showing DevCard")
-        showDevCard();
+        // MOSTRAR CRÉDITOS AL ENTRAR
+        UI.showDevCard();
     },
 
     toggleMenu(forceClose = false) {
@@ -25,7 +24,6 @@ const App = {
 
     showView(viewId, subjectName = null) {
         if (viewId !== 'form') this.vistaAnterior = viewId === 'subject' ? subjectName : 'dashboard';
-        
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById('view-' + viewId).classList.add('active');
         document.getElementById('fab-add').style.display = (viewId === 'form') ? 'none' : 'flex';
@@ -37,7 +35,6 @@ const App = {
             this.renderSubjectDetail(subjectName);
             this.toggleMenu(true);
         } else if (viewId === 'dashboard') {
-            document.getElementById('global-search').value = ''; 
             this.renderDashboard();
             this.toggleMenu(true);
         }
@@ -45,12 +42,7 @@ const App = {
 
     abrirFormulario(id = null) {
         this.editModeId = id;
-        const tituloForm = document.getElementById('form-title');
-        const btnSave = document.getElementById('btn-save-form');
-
         if (id) {
-            tituloForm.innerText = "Editar Actividad";
-            btnSave.innerText = "Actualizar Actividad";
             const act = Store.getActividadById(id);
             document.getElementById('titulo').value = act.titulo;
             document.getElementById('materia-select').value = act.materia;
@@ -59,14 +51,9 @@ const App = {
             document.getElementById('dificultad-select').value = act.dificultad;
             document.getElementById('notas-input').value = act.notas;
         } else {
-            tituloForm.innerText = "Crear Actividad";
-            btnSave.innerText = "Guardar Actividad";
             document.getElementById('titulo').value = '';
             document.getElementById('fecha-input').value = '';
             document.getElementById('notas-input').value = '';
-            if (this.vistaAnterior !== 'dashboard') {
-                document.getElementById('materia-select').value = this.vistaAnterior;
-            }
         }
         this.showView('form');
     },
@@ -80,17 +67,14 @@ const App = {
         const titulo = document.getElementById('titulo').value;
         const fecha = document.getElementById('fecha-input').value;
         if (!titulo || !fecha) return alert("Falta título o fecha.");
-
         const data = {
-            titulo: titulo,
+            titulo,
             materia: document.getElementById('materia-select').value,
             tipo: document.getElementById('tipo-select').value,
-            fecha: fecha,
+            fecha,
             dificultad: document.getElementById('dificultad-select').value,
             notas: document.getElementById('notas-input').value
-            // Ya no le pasamos la nota aquí, solo desde el prompt.
         };
-
         Store.guardarActividad(data, this.editModeId);
         this.cerrarFormulario();
         this.refrescarVistaActual();
@@ -106,9 +90,6 @@ const App = {
 
     realizarBusqueda() {
         const query = document.getElementById('global-search').value.toLowerCase();
-        if (!document.getElementById('view-dashboard').classList.contains('active')) {
-            this.showView('dashboard');
-        }
         this.renderDashboard(query);
     },
 
@@ -118,47 +99,26 @@ const App = {
         this.renderSubjectDetail(document.getElementById('subject-name-display').innerText);
     },
 
-    // --- NUEVA LÓGICA DE COMPLETAR (DETECTA EXÁMENES) ---
     toggleCompletada(id) { 
         const act = Store.getActividadById(id);
-        if (!act) return;
-
-        // Si la estamos marcando como completada (estaba en false)
-        if (!act.completada) {
+        if(!act) return;
+        if(!act.completada) {
             Store.setCompletada(id, true);
-            
-            // Si es un Examen y NO tiene nota, le preguntamos automáticamente
-            if (act.tipo === 'Examen' && (!act.calificacion || act.calificacion === '')) {
-                // Pequeño timeout para que se dibuje el check antes del alert
+            if(act.tipo === 'Examen') {
                 setTimeout(() => {
-                    const nota = prompt(`¡Completaste "${act.titulo}"!\n¿Qué calificación obtuviste? (Ej: 18, 20, AD, A)\n\n(Deja en blanco si aún no la sabes)`);
-                    if (nota !== null && nota.trim() !== '') {
-                        Store.setCalificacion(id, nota.trim());
-                        this.refrescarVistaActual();
-                    }
+                    const nota = prompt(`¡Examen finalizado! ¿Nota? (0-20, AD, A)`);
+                    if(nota) { Store.setCalificacion(id, nota); this.refrescarVistaActual(); }
                 }, 100);
             }
-        } else {
-            // Si la desmarcamos, simplemente le quitamos el estado completado
-            Store.setCompletada(id, false);
-        }
+        } else { Store.setCompletada(id, false); }
         this.refrescarVistaActual();
     },
 
-    // Botón manual en los detalles de la tarjeta
     editarCalificacion(id) {
         const act = Store.getActividadById(id);
-        const notaActual = act.calificacion || "";
-        const nota = prompt(`Ingresa la calificación para "${act.titulo}":\n(Ej: 0-20, AD, A, B, C)`, notaActual);
-        
-        if (nota !== null) { // null significa que le dio a Cancelar
-            Store.setCalificacion(id, nota.trim());
-            Store.setCompletada(id, true); // Si le pone nota, asumimos que ya está completada
-            this.refrescarVistaActual();
-            setTimeout(() => document.getElementById(`detalles-${id}`).style.display = 'block', 50);
-        }
+        const nota = prompt("Calificación:", act.calificacion || "");
+        if(nota !== null) { Store.setCalificacion(id, nota); this.refrescarVistaActual(); }
     },
-    // ----------------------------------------------------
 
     agregarSubtarea(actId) {
         const input = document.getElementById(`subtask-input-${actId}`);
@@ -174,45 +134,26 @@ const App = {
     },
 
     eliminarSubtarea(actId, subIndex) {
-        if(confirm("¿Borrar este paso?")) {
-            Store.deleteSubtarea(actId, subIndex);
-            this.refrescarVistaActual();
-            setTimeout(() => document.getElementById(`detalles-${actId}`).style.display = 'block', 50);
-        }
+        Store.deleteSubtarea(actId, subIndex);
+        this.refrescarVistaActual();
+        setTimeout(() => document.getElementById(`detalles-${actId}`).style.display = 'block', 50);
     },
 
     eliminarActividad(id) {
-        if(confirm("¿Eliminar actividad definitivamente?")) {
-            Store.deleteActividad(id);
-            this.refrescarVistaActual();
-        }
+        if(confirm("¿Eliminar?")) { Store.deleteActividad(id); this.refrescarVistaActual(); }
     },
 
     toggleDetalles(id) {
-        const detalles = document.getElementById(`detalles-${id}`);
-        const btn = document.getElementById(`btn-detalles-${id}`);
-        if (detalles.style.display === 'block') {
-            detalles.style.display = 'none';
-            btn.innerHTML = btn.innerHTML.replace('🔼', '🔽').replace('Ocultar detalles', 'Ver detalles y pasos');
-        } else {
-            detalles.style.display = 'block';
-            btn.innerHTML = 'Ocultar detalles 🔼';
-        }
+        const el = document.getElementById(`detalles-${id}`);
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
     },
 
-    renderDashboard(query = "") {
-        const acts = Store.getDashboardActividades(query);
-        UI.renderDashboard(acts, Store.state.materias);
-    },
+    renderDashboard(q = "") { UI.renderDashboard(Store.getDashboardActividades(q), Store.state.materias); },
 
-    renderSubjectDetail(materiaNombre) {
-        const acts = Store.getSubjectActividades(materiaNombre, this.materiaFiltroCompletadas);
-        const promedio = Store.getPromedio(materiaNombre);
-        UI.renderSubjectDetail(acts, Store.state.materias, promedio);
-    },
+    renderSubjectDetail(m) { UI.renderSubjectDetail(Store.getSubjectActividades(m, this.materiaFiltroCompletadas), Store.state.materias, Store.getPromedio(m)); },
 
     refrescarVistaActual() {
-        if (this.vistaAnterior === 'dashboard') this.realizarBusqueda();
+        if (this.vistaAnterior === 'dashboard') this.renderDashboard();
         else this.renderSubjectDetail(document.getElementById('subject-name-display').innerText);
     }
 };
