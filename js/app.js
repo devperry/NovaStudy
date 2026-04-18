@@ -10,8 +10,9 @@ const App = {
         Store.init();
         UI.renderNav(Store.state.materias);
         UI.renderSelectMaterias(Store.state.materias);
-        showDevCard();
+        
         this.renderDashboard();
+        showDevCard();
     },
 
     toggleMenu(forceClose = false) {
