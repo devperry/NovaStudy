@@ -11,8 +11,6 @@ const App = {
         UI.renderNav(Store.state.materias);
         UI.renderSelectMaterias(Store.state.materias);
         this.renderDashboard();
-        
-        // MOSTRAR CRÉDITOS AL ENTRAR
         UI.showDevCard();
     },
 
@@ -156,14 +154,19 @@ const App = {
         if (this.vistaAnterior === 'dashboard') this.renderDashboard();
         else this.renderSubjectDetail(document.getElementById('subject-name-display').innerText);
     }
-    if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Modo Offline Activado 🚀'))
-      .catch(err => console.log('Error al activar offline', err));
-  });
-}
 };
 
+// 1. Exponer la app a la ventana global (Soluciona "app is not defined")
 window.app = App;
+
+// 2. Iniciar la UI al cargar
 document.addEventListener('DOMContentLoaded', () => App.init());
+
+// 3. Registrar Service Worker para OFFLINE
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Offline activado v2 🚀', reg))
+            .catch(err => console.error('Error al activar offline', err));
+    });
+}
