@@ -12,6 +12,7 @@ const App = {
         UI.renderSelectMaterias(Store.state.materias);
         
         this.renderDashboard();
+        console.log("[Debbung, Showing DevCard");
         showDevCard();
     },
 
