@@ -156,6 +156,13 @@ const App = {
         if (this.vistaAnterior === 'dashboard') this.renderDashboard();
         else this.renderSubjectDetail(document.getElementById('subject-name-display').innerText);
     }
+    if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Modo Offline Activado 🚀'))
+      .catch(err => console.log('Error al activar offline', err));
+  });
+}
 };
 
 window.app = App;
