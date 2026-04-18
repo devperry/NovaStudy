@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SISTEMA TOP 1%</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- Cabecera Mobile -->
+<div class="mobile-header">
+    <button class="menu-btn" onclick="app.toggleMenu()"><i class="fas fa-bars"></i></button>
+    <div class="search-bar">
+        <i class="fas fa-search" style="color: #9ca3af;"></i>
+        <input type="text" id="global-search" placeholder="Buscar..." oninput="app.realizarBusqueda()">
+    </div>
+</div>
+
+<!-- Menú Lateral -->
+<nav id="sidebar">
+    <div class="nav-logo">
+        <span><i class="fas fa-bolt"></i> Sistema Top 1%</span>
+        <button class="close-sidebar" onclick="app.toggleMenu()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="nav-item active" onclick="app.showView('dashboard'); app.toggleMenu(true);">
+        <i class="fas fa-home"></i> Dashboard Global
+    </div>
+    <div style="margin-top: 30px;">
+        <span style="font-size:0.9rem; font-weight:bold; color:var(--text-muted); margin-left:12px;">MIS MATERIAS</span>
+        <div id="nav-subjects-list" style="margin-top: 10px;"></div>
+        <div class="nav-item" onclick="app.agregarMateria()" style="margin-top:15px; color: var(--primary);">
+            <i class="fas fa-plus"></i> Añadir Materia
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+    
+    <!-- DASHBOARD -->
+    <div id="view-dashboard" class="view active">
+        <h2 style="margin-top:0;">Próximas Obligaciones</h2>
+        <div id="dash-all" class="grid-cards"></div>
+    </div>
+
+    <!-- VISTA POR MATERIA -->
+    <div id="view-subject" class="view">
+        <button onclick="app.showView('dashboard')" style="background:none; border:none; font-weight:bold; margin-bottom:15px; font-size:1.1rem; cursor:pointer; padding: 10px 0;"><i class="fas fa-arrow-left"></i> Volver</button>
+        
+        <div class="subject-header">
+            <h1 id="subject-name-display" style="margin:0; font-size: 2.2rem;">Materia</h1>
+            <div id="subject-average" class="average-badge">
+                <i class="fas fa-chart-line"></i> Promedio: <span>--</span>
+            </div>
+        </div>
+        
+        <div class="filter-tabs">
+            <button class="filter-btn active" id="btn-filtro-pendientes" onclick="app.setFiltroMateria(false)">⏳ Pendientes</button>
+            <button class="filter-btn" id="btn-filtro-completadas" onclick="app.setFiltroMateria(true)">✅ Completadas</button>
+        </div>
+        
+        <h3 style="border-bottom:2px solid #e5e7eb; padding-bottom:5px; margin-top:25px;">Exámenes</h3>
+        <div id="subject-exams" class="grid-cards"></div>
+
+        <h3 style="border-bottom:2px solid #e5e7eb; padding-bottom:5px; margin-top:35px;">Tareas</h3>
+        <div id="subject-tasks" class="grid-cards"></div>
+
+        <h3 style="border-bottom:2px solid #e5e7eb; padding-bottom:5px; margin-top:35px;">Otros / Apuntes</h3>
+        <div id="subject-others" class="grid-cards"></div>
+    </div>
+
+    <!-- VISTA FORMULARIO GIGANTE -->
+    <div id="view-form" class="view">
+        <div class="form-header">
+            <h1 id="form-title" style="margin:0;">Crear Actividad</h1>
+            <button class="form-close-btn" onclick="app.cerrarFormulario()">❌ Cancelar</button>
+        </div>
+
+        <label style="font-weight:bold; display:block; margin-bottom:8px;">Título</label>
+        <input type="text" id="titulo" class="big-control" placeholder="Ej: Examen Parcial 1">
+
+        <label style="font-weight:bold; display:block; margin-bottom:8px;">Materia</label>
+        <select id="materia-select" class="big-control"></select>
+
+        <label style="font-weight:bold; display:block; margin-bottom:8px;">Tipo de Actividad</label>
+        <select id="tipo-select" class="big-control">
+            <option value="Tarea">Tarea / Deber</option>
+            <option value="Examen">Examen / Evaluación</option>
+            <option value="Otro">Otro / Apunte</option>
+        </select>
+
+        <label style="font-weight:bold; display:block; margin-bottom:8px;">Fecha Límite</label>
+        <input type="date" id="fecha-input" class="big-control">
+
+        <label style="font-weight:bold; display:block; margin-bottom:8px;">Energía / Dificultad</label>
+        <select id="dificultad-select" class="big-control">
+            <option value="Fácil">🟢 Fácil (Energía Baja)</option>
+            <option value="Medio" selected>🟡 Normal (Energía Media)</option>
+            <option value="Difícil">🔴 Difícil (Energía Alta)</option>
+        </select>
+
+        <label style="font-weight:bold; display:block; margin-bottom:8px;">Detalles y Apuntes</label>
+        <textarea id="notas-input" class="big-control" rows="4" placeholder="Temas, metodología..."></textarea>
+        
+        <button id="btn-save-form" class="btn-massive" onclick="app.guardarActividad()">Guardar Actividad</button>
+    </div>
+
+</main>
+
+<button id="fab-add" class="fab" onclick="app.abrirFormulario()">
+    <i class="fas fa-plus"></i>
+</button>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
