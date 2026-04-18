@@ -8,6 +8,40 @@ export const UI = {
             </div>
         `).join('');
     },
+    
+
+    showDevCard() {
+        // Crear el elemento de la carta
+        const card = document.createElement('div');
+        card.className = 'dev-card';
+        card.id = 'dev-card';
+        
+        card.innerHTML = `
+            <div class="dev-avatar">
+                <i class="fas fa-code"></i>
+            </div>
+            <div class="dev-info">
+                <h4>SystemTopSchool v1.1</h4>
+                <p>Made with ❤️ by <b>MichaelModz (Migue 😎)</b></p>
+            </div>
+            <button class="close-dev-card" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        document.body.appendChild(card);
+
+        
+        setTimeout(() => {
+            const existingCard = document.getElementById('dev-card');
+            if(existingCard) {
+                existingCard.style.opacity = '0';
+                existingCard.style.transition = '0.5s';
+                setTimeout(() => existingCard.remove(), 500);
+            }
+        }, 6000);
+    },
+
 
     renderSelectMaterias(materias) {
         const select = document.getElementById('materia-select');
