@@ -8,48 +8,17 @@ export const UI = {
             </div>
         `).join('');
     },
-    
-
-    showDevCard() {
-        // Crear el elemento de la carta
-        const card = document.createElement('div');
-        card.className = 'dev-card';
-        card.id = 'dev-card';
-        
-        card.innerHTML = `
-            <div class="dev-avatar">
-                <i class="fas fa-code"></i>
-            </div>
-            <div class="dev-info">
-                <h4>SystemTopSchool v1.1</h4>
-                <p>Made with ❤️ by <b>MichaelModz (Migue 😎)</b></p>
-            </div>
-            <button class="close-dev-card" onclick="this.parentElement.remove()">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-
-        document.body.appendChild(card);
-
-        
-        setTimeout(() => {
-            const existingCard = document.getElementById('dev-card');
-            if(existingCard) {
-                existingCard.style.opacity = '0';
-                existingCard.style.transition = '0.5s';
-                setTimeout(() => existingCard.remove(), 500);
-            }
-        }, 6000);
-    },
-
 
     renderSelectMaterias(materias) {
         const select = document.getElementById('materia-select');
-        select.innerHTML = materias.map(m => `<option value="${m.nombre}">${m.nombre}</option>`).join('');
+        if(select) {
+            select.innerHTML = materias.map(m => `<option value="${m.nombre}">${m.nombre}</option>`).join('');
+        }
     },
 
     renderDashboard(actividades, materiasStore) {
         const container = document.getElementById('dash-all');
+        if(!container) return;
         container.innerHTML = actividades.map(a => this.createCard(a, materiasStore)).join('');
     },
 
@@ -75,6 +44,7 @@ export const UI = {
     obtenerInfoFecha(fechaStr, completada) {
         if(completada) return { texto: "✅ Finalizada", urgente: false };
         if(!fechaStr) return { texto: "Sin fecha", urgente: false };
+        
         const hoy = new Date(); hoy.setHours(0,0,0,0);
         const fechaT = new Date(fechaStr + 'T00:00:00'); 
         const diffDias = Math.ceil((fechaT - hoy) / (1000 * 60 * 60 * 24));
@@ -86,19 +56,36 @@ export const UI = {
         return { texto: `📅 Faltan ${diffDias} días`, urgente: false };
     },
 
+    // --- CARTA DE CRÉDITOS ---
+    showDevCard() {
+        const card = document.createElement('div');
+        card.className = 'dev-card';
+        card.id = 'dev-card';
+        card.innerHTML = `
+            <div class="dev-avatar"><i class="fas fa-code"></i></div>
+            <div class="dev-info">
+                <h4>SystemTopSchool</h4>
+                <p>Made with ❤️ by <b>MichaelModz (Migue 😎)</b></p>
+            </div>
+            <button class="close-dev-card" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+        `;
+        document.body.appendChild(card);
+        setTimeout(() => {
+            const el = document.getElementById('dev-card');
+            if(el) { el.style.opacity = '0'; el.style.transition = '1s'; setTimeout(()=>el.remove(), 1000); }
+        }, 8000);
+    },
+
     createCard(a, materiasStore) {
         const mat = materiasStore.find(m => m.nombre === a.materia);
         const color = mat ? mat.color : '#ccc';
         const infoFecha = this.obtenerInfoFecha(a.fecha, a.completada);
         const statusClass = a.completada ? 'completed' : (infoFecha.urgente ? 'urgent' : '');
         const difIcon = a.dificultad === 'Fácil' ? '🟢 Baja' : (a.dificultad === 'Medio' ? '🟡 Media' : '🔴 Alta');
-        
+        const badgeCalificacion = (a.calificacion && a.calificacion.toString().trim() !== '') ? `<div class="grade-badge">🏆 Nota: ${a.calificacion.toString().toUpperCase()}</div>` : '';
         const countSub = a.subtareas.length;
         const countDone = a.subtareas.filter(s => s.completada).length;
         const subTxt = countSub > 0 ? `(${countDone}/${countSub})` : '';
-
-        // Insignia de nota visible en el header de la tarjeta
-        const badgeCalificacion = (a.calificacion && a.calificacion.toString().trim() !== '') ? `<div class="grade-badge">🏆 Nota: ${a.calificacion.toString().toUpperCase()}</div>` : '';
 
         const htmlSubtareas = a.subtareas.map((sub, index) => `
             <div class="subtask-item ${sub.completada ? 'done' : ''}">
@@ -118,37 +105,26 @@ export const UI = {
                         <input type="checkbox" class="big-checkbox" title="Completada" ${a.completada ? 'checked' : ''} onchange="app.toggleCompletada(${a.id})">
                     </div>
                 </div>
-                
                 <h4 style="margin: 5px 0; font-size:1.2rem;">${a.titulo}</h4>
                 <div style="display:flex; align-items:center; gap:5px; font-size:0.9rem; font-weight:bold; color:${color};">
                     <div class="color-dot" style="background-color: ${color};"></div>
                     ${a.materia} <span style="color:var(--text-muted); font-weight:normal;">• ${a.tipo}</span>
                 </div>
-                
-                <button id="btn-detalles-${a.id}" class="btn-toggle-details" onclick="app.toggleDetalles(${a.id})">
-                    Ver detalles y pasos ${subTxt} 🔽
-                </button>
-
+                <button id="btn-detalles-${a.id}" class="btn-toggle-details" onclick="app.toggleDetalles(${a.id})">Ver detalles y pasos ${subTxt} 🔽</button>
                 <div id="detalles-${a.id}" class="card-details">
-                    ${a.notas ? `<p style="font-size:0.95rem; color:var(--text-main); white-space: pre-wrap; margin:0 0 15px 0; background:#f9fafb; padding:12px; border-radius:8px;">${a.notas}</p>` : ''}
-                    
+                    ${a.notes ? `<p style="font-size:0.95rem; background:#f9fafb; padding:12px; border-radius:8px;">${a.notas}</p>` : ''}
                     <div>
-                        <strong style="font-size:0.9rem; color:var(--text-muted);">PASOS / CHECKLIST:</strong>
+                        <strong style="font-size:0.8rem; color:var(--text-muted);">CHECKLIST:</strong>
                         <div style="margin-top:10px;">${htmlSubtareas}</div>
                         <div class="add-subtask-wrapper">
-                            <input type="text" id="subtask-input-${a.id}" placeholder="Añadir paso..." onkeypress="if(event.key==='Enter') app.agregarSubtarea(${a.id})">
+                            <input type="text" id="subtask-input-${a.id}" placeholder="Nuevo paso..." onkeypress="if(event.key==='Enter') app.agregarSubtarea(${a.id})">
                             <button onclick="app.agregarSubtarea(${a.id})">+</button>
                         </div>
                     </div>
-                    
-                    <div class="card-actions" style="margin-top:20px; border-top:1px solid #e5e7eb; padding-top:15px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-                        <!-- Botón para asignar nota manualmente (Ideal para tareas calificadas o correcciones) -->
-                        <button onclick="app.editarCalificacion(${a.id})" style="color:#d97706; background:#fef3c7; border-radius:6px; padding:8px 12px;"><i class="fas fa-medal"></i> Asignar Nota</button>
-                        
-                        <div style="display:flex; gap:15px;">
-                            <button onclick="app.abrirFormulario(${a.id})" style="color:var(--primary);"><i class="fas fa-pen"></i> Editar</button>
-                            <button onclick="app.eliminarActividad(${a.id})" style="color:var(--danger);"><i class="fas fa-trash"></i></button>
-                        </div>
+                    <div class="card-actions" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+                        <button onclick="app.editarCalificacion(${a.id})" style="color:#d97706;"><i class="fas fa-medal"></i> Nota</button>
+                        <button onclick="app.abrirFormulario(${a.id})" style="color:var(--primary);"><i class="fas fa-pen"></i></button>
+                        <button onclick="app.eliminarActividad(${a.id})" style="color:var(--danger);"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
             </div>
