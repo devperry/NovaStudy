@@ -64,7 +64,7 @@ export const UI = {
         card.innerHTML = `
             <div class="dev-avatar"><i class="fas fa-code"></i></div>
             <div class="dev-info">
-                <h4>SystemTopSchool</h4>
+                <h4>NovaStudy</h4>
                 <p>Made with ❤️ by <b>MichaelModz (Migue 😎)</b></p>
             </div>
             <button class="close-dev-card" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
