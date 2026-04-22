@@ -1,36 +1,43 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2563eb">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA TOP 1%</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>SystemTopSchool</title>
+    <!-- Manifest para instalación PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
     
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Librería de Confeti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
-<body>
+<body data-theme="default">
 
-<!-- Cabecera Mobile -->
 <div class="mobile-header">
     <button class="menu-btn" onclick="app.toggleMenu()"><i class="fas fa-bars"></i></button>
     <div class="search-bar">
-        <i class="fas fa-search" style="color: #9ca3af;"></i>
+        <i class="fas fa-search" style="color: var(--text-muted);"></i>
         <input type="text" id="global-search" placeholder="Buscar..." oninput="app.realizarBusqueda()">
     </div>
 </div>
 
-<!-- Menú Lateral -->
 <nav id="sidebar">
     <div class="nav-logo">
-        <span><i class="fas fa-bolt"></i> Sistema Top 1%</span>
+        <span><i class="fas fa-bolt"></i> SystemTopSchool</span>
         <button class="close-sidebar" onclick="app.toggleMenu()"><i class="fas fa-times"></i></button>
     </div>
+    
     <div class="nav-item active" onclick="app.showView('dashboard'); app.toggleMenu(true);">
         <i class="fas fa-home"></i> Dashboard Global
     </div>
+
+    <!-- Pestaña de Temas -->
+    <div class="nav-item" onclick="app.showView('aspecto'); app.toggleMenu(true);" style="color: var(--primary);">
+        <i class="fas fa-paint-brush"></i> Aspecto & Temas 👑
+    </div>
+    
     <div style="margin-top: 30px;">
         <span style="font-size:0.9rem; font-weight:bold; color:var(--text-muted); margin-left:12px;">MIS MATERIAS</span>
         <div id="nav-subjects-list" style="margin-top: 10px;"></div>
@@ -50,7 +57,7 @@
 
     <!-- VISTA POR MATERIA -->
     <div id="view-subject" class="view">
-        <button onclick="app.showView('dashboard')" style="background:none; border:none; font-weight:bold; margin-bottom:15px; font-size:1.1rem; cursor:pointer; padding: 10px 0;"><i class="fas fa-arrow-left"></i> Volver</button>
+        <button onclick="app.showView('dashboard')" style="background:none; border:none; font-weight:bold; margin-bottom:15px; font-size:1.1rem; cursor:pointer; padding: 10px 0; color:var(--text-main);"><i class="fas fa-arrow-left"></i> Volver</button>
         
         <div class="subject-header">
             <h1 id="subject-name-display" style="margin:0; font-size: 2.2rem;">Materia</h1>
@@ -64,14 +71,39 @@
             <button class="filter-btn" id="btn-filtro-completadas" onclick="app.setFiltroMateria(true)">✅ Completadas</button>
         </div>
         
-        <h3 style="border-bottom:2px solid #e5e7eb; padding-bottom:5px; margin-top:25px;">Exámenes</h3>
+        <h3 style="border-bottom:2px solid var(--border-color); padding-bottom:5px; margin-top:25px;">Exámenes</h3>
         <div id="subject-exams" class="grid-cards"></div>
 
-        <h3 style="border-bottom:2px solid #e5e7eb; padding-bottom:5px; margin-top:35px;">Tareas</h3>
+        <h3 style="border-bottom:2px solid var(--border-color); padding-bottom:5px; margin-top:35px;">Tareas</h3>
         <div id="subject-tasks" class="grid-cards"></div>
 
-        <h3 style="border-bottom:2px solid #e5e7eb; padding-bottom:5px; margin-top:35px;">Otros / Apuntes</h3>
+        <h3 style="border-bottom:2px solid var(--border-color); padding-bottom:5px; margin-top:35px;">Otros / Apuntes</h3>
         <div id="subject-others" class="grid-cards"></div>
+    </div>
+
+    <!-- VISTA DE ASPECTO Y TEMAS -->
+    <div id="view-aspecto" class="view">
+        <h1 style="margin-top:0;"><i class="fas fa-palette"></i> Personalización</h1>
+        <p style="color:var(--text-muted); margin-bottom: 30px;">Prueba los temas exclusivos (Futura función Premium 👑).</p>
+        
+        <div class="grid-cards">
+            <div class="card" onclick="app.cambiarTema('default')" style="cursor:pointer; text-align:center; border:2px solid #cbd5e1;">
+                <div style="background:#f3f4f6; height:60px; border-radius:8px; margin-bottom:10px;"></div>
+                <h3>Clásico (Claro)</h3>
+            </div>
+            <div class="card" onclick="app.cambiarTema('dark')" style="cursor:pointer; text-align:center; border:2px solid #374151; background:#1f2937; color:white;">
+                <div style="background:#111827; height:60px; border-radius:8px; margin-bottom:10px;"></div>
+                <h3 style="color:white; margin:0;">Modo Oscuro 🌙</h3>
+            </div>
+            <div class="card" onclick="app.cambiarTema('pink')" style="cursor:pointer; text-align:center; border:2px solid #fbcfe8; background:#fdf2f8;">
+                <div style="background:#fce7f3; height:60px; border-radius:8px; margin-bottom:10px;"></div>
+                <h3 style="color:#db2777; margin:0;">Sakura Pastel 🌸</h3>
+            </div>
+            <div class="card" onclick="app.cambiarTema('space')" style="cursor:pointer; text-align:center; border:2px solid #8b5cf6; background:#0f172a; color:white;">
+                <div style="background: linear-gradient(45deg, #4c1d95, #000000); height:60px; border-radius:8px; margin-bottom:10px;"></div>
+                <h3 style="color:#c4b5fd; margin:0;">Nebula Espacial 🚀</h3>
+            </div>
+        </div>
     </div>
 
     <!-- VISTA FORMULARIO GIGANTE -->
@@ -87,7 +119,7 @@
         <label style="font-weight:bold; display:block; margin-bottom:8px;">Materia</label>
         <select id="materia-select" class="big-control"></select>
 
-        <label style="font-weight:bold; display:block; margin-bottom:8px;">Tipo de Actividad</label>
+        <label style="font-weight:bold; display:block; margin-bottom:8px;">Tipo</label>
         <select id="tipo-select" class="big-control">
             <option value="Tarea">Tarea / Deber</option>
             <option value="Examen">Examen / Evaluación</option>
@@ -97,11 +129,11 @@
         <label style="font-weight:bold; display:block; margin-bottom:8px;">Fecha Límite</label>
         <input type="date" id="fecha-input" class="big-control">
 
-        <label style="font-weight:bold; display:block; margin-bottom:8px;">Energía / Dificultad</label>
+        <label style="font-weight:bold; display:block; margin-bottom:8px;">Dificultad</label>
         <select id="dificultad-select" class="big-control">
-            <option value="Fácil">🟢 Fácil (Energía Baja)</option>
-            <option value="Medio" selected>🟡 Normal (Energía Media)</option>
-            <option value="Difícil">🔴 Difícil (Energía Alta)</option>
+            <option value="Fácil">🟢 Fácil</option>
+            <option value="Medio" selected>🟡 Normal</option>
+            <option value="Difícil">🔴 Difícil</option>
         </select>
 
         <label style="font-weight:bold; display:block; margin-bottom:8px;">Detalles y Apuntes</label>
