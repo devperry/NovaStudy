@@ -48,6 +48,37 @@
 </nav>
 
 <main id="main-content">
+
+    <!-- NUEVO: VISTA DE LOGIN Y REGISTRO -->
+    <div id="view-auth" class="view" style="max-width: 400px; margin: 0 auto; text-align: center; padding-top: 50px;">
+        <i class="fas fa-bolt" style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></i>
+        <h1 style="margin-bottom: 5px;">SystemTopSchool</h1>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Inicia sesión para sincronizar tus tareas.</p>
+
+        <div class="card" style="text-align: left;">
+            <label style="font-weight:bold;">Correo Electrónico</label>
+            <input type="email" id="auth-email" class="big-control" placeholder="tu@correo.com" style="margin-bottom: 15px; padding: 12px;">
+            
+            <label style="font-weight:bold;">Contraseña</label>
+            <input type="password" id="auth-password" class="big-control" placeholder="******" style="margin-bottom: 20px; padding: 12px;">
+            
+            <button class="btn-massive" onclick="app.login()" style="margin-top: 0; padding: 14px;">Iniciar Sesión</button>
+            
+            <p style="text-align: center; margin-top: 20px; font-size: 0.9rem;">
+                ¿No tienes cuenta? <a href="#" onclick="app.register()" style="color: var(--primary); font-weight: bold;">Regístrate aquí</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- NUEVO: VISTA PREMIUM (PAYWALL) -->
+    <div id="view-premium" class="view" style="text-align: center; padding: 20px;">
+        <i class="fas fa-crown" style="font-size: 5rem; color: #fbbf24; margin-bottom: 20px;"></i>
+        <h1 style="font-size: 2.5rem; margin-bottom: 10px;">Club Top 1%</h1>
+        
+        <div id="premium-status" class="card" style="margin-top: 20px; text-align: left; background: linear-gradient(135deg, #1f2937, #000); color: white; border: 1px solid #374151;">
+            <!-- El contenido cambia si es Gratis o Premium desde JavaScript -->
+        </div>
+    </div>
     
     <!-- DASHBOARD -->
     <div id="view-dashboard" class="view active">
