@@ -1,19 +1,12 @@
 export const UI = {
     renderNav(materias) {
         const list = document.getElementById('nav-subjects-list');
-        list.innerHTML = materias.map(m => `
-            <div class="nav-item" onclick="app.showView('subject', '${m.nombre}')">
-                <div class="color-dot" style="background-color: ${m.color};"></div>
-                ${m.nombre}
-            </div>
-        `).join('');
+        list.innerHTML = materias.map(m => `<div class="nav-item" onclick="app.showView('subject', '${m.nombre}')"><div class="color-dot" style="background-color: ${m.color};"></div>${m.nombre}</div>`).join('');
     },
 
     renderSelectMaterias(materias) {
         const select = document.getElementById('materia-select');
-        if(select) {
-            select.innerHTML = materias.map(m => `<option value="${m.nombre}">${m.nombre}</option>`).join('');
-        }
+        if(select) select.innerHTML = materias.map(m => `<option value="${m.nombre}">${m.nombre}</option>`).join('');
     },
 
     renderDashboard(actividades, materiasStore) {
@@ -24,12 +17,8 @@ export const UI = {
 
     renderSubjectDetail(actividades, materiasStore, promedio) {
         const avgDisplay = document.querySelector('#subject-average span');
-        if(promedio) {
-            avgDisplay.innerText = promedio;
-            document.getElementById('subject-average').style.display = 'flex';
-        } else {
-            document.getElementById('subject-average').style.display = 'none';
-        }
+        if(promedio) { avgDisplay.innerText = promedio; document.getElementById('subject-average').style.display = 'flex'; } 
+        else { document.getElementById('subject-average').style.display = 'none'; }
 
         document.getElementById('subject-exams').innerHTML = actividades.filter(a => a.tipo === 'Examen').map(a => this.createCard(a, materiasStore)).join('');
         document.getElementById('subject-tasks').innerHTML = actividades.filter(a => a.tipo === 'Tarea').map(a => this.createCard(a, materiasStore)).join('');
@@ -44,11 +33,9 @@ export const UI = {
     obtenerInfoFecha(fechaStr, completada) {
         if(completada) return { texto: "✅ Finalizada", urgente: false };
         if(!fechaStr) return { texto: "Sin fecha", urgente: false };
-        
         const hoy = new Date(); hoy.setHours(0,0,0,0);
         const fechaT = new Date(fechaStr + 'T00:00:00'); 
         const diffDias = Math.ceil((fechaT - hoy) / (1000 * 60 * 60 * 24));
-        
         if(diffDias === 0) return { texto: "🚨 VENCE HOY", urgente: true };
         if(diffDias === 1) return { texto: "⚠️ Vence Mañana", urgente: true };
         if(diffDias === 2) return { texto: "⏳ Faltan 2 días", urgente: true };
@@ -56,24 +43,14 @@ export const UI = {
         return { texto: `📅 Faltan ${diffDias} días`, urgente: false };
     },
 
-    // --- CARTA DE CRÉDITOS ---
     showDevCard() {
+        if(document.getElementById('dev-card')) return;
         const card = document.createElement('div');
         card.className = 'dev-card';
         card.id = 'dev-card';
-        card.innerHTML = `
-            <div class="dev-avatar"><i class="fas fa-code"></i></div>
-            <div class="dev-info">
-                <h4>NovaStudy</h4>
-                <p>Made with ❤️ by <b>MichaelModz (Migue 😎)</b></p>
-            </div>
-            <button class="close-dev-card" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
-        `;
+        card.innerHTML = `<div class="dev-avatar"><i class="fas fa-code"></i></div><div class="dev-info"><h4>SystemTopSchool</h4><p>Made with ❤️ by <b>MichaelModz 😎</b></p></div><button class="close-dev-card" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
         document.body.appendChild(card);
-        setTimeout(() => {
-            const el = document.getElementById('dev-card');
-            if(el) { el.style.opacity = '0'; el.style.transition = '1s'; setTimeout(()=>el.remove(), 1000); }
-        }, 8000);
+        setTimeout(() => { const el = document.getElementById('dev-card'); if(el) { el.style.opacity = '0'; el.style.transition = '1s'; setTimeout(()=>el.remove(), 1000); } }, 8000);
     },
 
     createCard(a, materiasStore) {
@@ -83,48 +60,38 @@ export const UI = {
         const statusClass = a.completada ? 'completed' : (infoFecha.urgente ? 'urgent' : '');
         const difIcon = a.dificultad === 'Fácil' ? '🟢 Baja' : (a.dificultad === 'Medio' ? '🟡 Media' : '🔴 Alta');
         const badgeCalificacion = (a.calificacion && a.calificacion.toString().trim() !== '') ? `<div class="grade-badge">🏆 Nota: ${a.calificacion.toString().toUpperCase()}</div>` : '';
-        const countSub = a.subtareas.length;
-        const countDone = a.subtareas.filter(s => s.completada).length;
+        const countSub = a.subtareas.length; const countDone = a.subtareas.filter(s => s.completada).length;
         const subTxt = countSub > 0 ? `(${countDone}/${countSub})` : '';
 
-        const htmlSubtareas = a.subtareas.map((sub, index) => `
-            <div class="subtask-item ${sub.completada ? 'done' : ''}">
-                <input type="checkbox" ${sub.completada ? 'checked' : ''} onchange="app.toggleSubtarea(${a.id}, ${index})">
-                <span style="flex:1;">${sub.texto}</span>
-                <button class="btn-del-sub" onclick="app.eliminarSubtarea(${a.id}, ${index})"><i class="fas fa-times"></i></button>
-            </div>
-        `).join('');
+        const htmlSubtareas = a.subtareas.map((sub, index) => `<div class="subtask-item ${sub.completada ? 'done' : ''}"><input type="checkbox" ${sub.completada ? 'checked' : ''} onchange="app.toggleSubtarea(${a.id}, ${index})"><span style="flex:1;">${sub.texto}</span><button class="btn-del-sub" onclick="app.eliminarSubtarea(${a.id}, ${index})"><i class="fas fa-times"></i></button></div>`).join('');
 
         return `
             <div class="card ${statusClass}" style="border-left-color: ${color};">
                 <div class="badges-container">
                     <span class="badge-date">${infoFecha.texto}</span>
                     <div style="display:flex; gap:12px; align-items:center;">
-                        ${badgeCalificacion}
-                        <span class="badge-diff">⚡ ${difIcon}</span>
+                        ${badgeCalificacion} <span class="badge-diff">⚡ ${difIcon}</span>
                         <input type="checkbox" class="big-checkbox" title="Completada" ${a.completada ? 'checked' : ''} onchange="app.toggleCompletada(${a.id})">
                     </div>
                 </div>
                 <h4 style="margin: 5px 0; font-size:1.2rem;">${a.titulo}</h4>
                 <div style="display:flex; align-items:center; gap:5px; font-size:0.9rem; font-weight:bold; color:${color};">
-                    <div class="color-dot" style="background-color: ${color};"></div>
-                    ${a.materia} <span style="color:var(--text-muted); font-weight:normal;">• ${a.tipo}</span>
+                    <div class="color-dot" style="background-color: ${color};"></div> ${a.materia} <span style="color:var(--text-muted); font-weight:normal;">• ${a.tipo}</span>
                 </div>
                 <button id="btn-detalles-${a.id}" class="btn-toggle-details" onclick="app.toggleDetalles(${a.id})">Ver detalles y pasos ${subTxt} 🔽</button>
                 <div id="detalles-${a.id}" class="card-details">
-                    ${a.notes ? `<p style="font-size:0.95rem; background:#f9fafb; padding:12px; border-radius:8px;">${a.notas}</p>` : ''}
+                    ${a.notas ? `<p style="font-size:0.95rem; background:var(--bg); padding:12px; border-radius:8px;">${a.notas}</p>` : ''}
                     <div>
                         <strong style="font-size:0.8rem; color:var(--text-muted);">CHECKLIST:</strong>
                         <div style="margin-top:10px;">${htmlSubtareas}</div>
-                        <div class="add-subtask-wrapper">
-                            <input type="text" id="subtask-input-${a.id}" placeholder="Nuevo paso..." onkeypress="if(event.key==='Enter') app.agregarSubtarea(${a.id})">
-                            <button onclick="app.agregarSubtarea(${a.id})">+</button>
-                        </div>
+                        <div class="add-subtask-wrapper"><input type="text" id="subtask-input-${a.id}" placeholder="Nuevo paso..." onkeypress="if(event.key==='Enter') app.agregarSubtarea(${a.id})"><button onclick="app.agregarSubtarea(${a.id})">+</button></div>
                     </div>
-                    <div class="card-actions" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-                        <button onclick="app.editarCalificacion(${a.id})" style="color:#d97706;"><i class="fas fa-medal"></i> Nota</button>
-                        <button onclick="app.abrirFormulario(${a.id})" style="color:var(--primary);"><i class="fas fa-pen"></i></button>
-                        <button onclick="app.eliminarActividad(${a.id})" style="color:var(--danger);"><i class="fas fa-trash"></i></button>
+                    <div style="margin-top:15px; border-top:1px solid var(--border-color); padding-top:10px; display:flex; justify-content:space-between; gap:10px;">
+                        <button onclick="app.editarCalificacion(${a.id})" style="color:#d97706; background:transparent; border:none; font-weight:bold; cursor:pointer;"><i class="fas fa-medal"></i> Nota</button>
+                        <div>
+                            <button onclick="app.abrirFormulario(${a.id})" style="color:var(--primary); background:transparent; border:none; cursor:pointer; margin-right:15px;"><i class="fas fa-pen"></i></button>
+                            <button onclick="app.eliminarActividad(${a.id})" style="color:var(--danger); background:transparent; border:none; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                        </div>
                     </div>
                 </div>
             </div>
