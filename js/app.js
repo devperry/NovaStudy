@@ -10,14 +10,28 @@ const App = {
 
     init() {
         Store.init();
-        UI.renderNav(Store.state.materias);
-        UI.renderSelectMaterias(Store.state.materias);
-        this.renderDashboard();
-        UI.showDevCard();
-
+        
         // Cargar Tema Guardado
         const savedTheme = localStorage.getItem('top1_theme') || 'default';
         this.cambiarTema(savedTheme);
+
+        // ARRANCAR EL SISTEMA DE SEGURIDAD (FIREBASE)
+        Cloud.initAuth(
+            (userData) => {
+                // LOGUEADO CORRECTAMENTE
+                document.querySelector('.mobile-header').style.display = 'flex';
+                UI.renderNav(Store.state.materias);
+                UI.renderSelectMaterias(Store.state.materias);
+                this.renderDashboard();
+                this.showView('dashboard');
+                UI.showDevCard();
+            },
+            () => {
+                // NO LOGUEADO (Botar a la pantalla de login)
+                document.querySelector('.mobile-header').style.display = 'none'; // Ocultar barra superior
+                this.showView('auth');
+            }
+        );
     },
 
     cambiarTema(themeName) {
