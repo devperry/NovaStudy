@@ -139,7 +139,56 @@ const App = {
         else this.renderSubjectDetail(document.getElementById('subject-name-display').innerText);
     }
 };
+// --- LÓGICA DE FIREBASE ---
+    async login() {
+        const email = document.getElementById('auth-email').value;
+        const pass = document.getElementById('auth-password').value;
+        if(!email || !pass) return alert("Llena los campos");
+        
+        const res = await Cloud.login(email, pass);
+        if(!res.success) alert(res.error);
+    },
 
+    async register() {
+        const email = document.getElementById('auth-email').value;
+        const pass = document.getElementById('auth-password').value;
+        if(!email || !pass) return alert("Llena los campos");
+        
+        const nombre = prompt("¿Cómo te llamas?");
+        if(!nombre) return;
+
+        const res = await Cloud.register(email, pass, nombre);
+        if(!res.success) alert(res.error);
+    },
+
+    logout() {
+        if(confirm("¿Cerrar sesión?")) Cloud.logout();
+    },
+
+    // RENDERIZAR LA PANTALLA PREMIUM
+    renderPremium() {
+        const statusBox = document.getElementById('premium-status');
+        const user = Cloud.userData;
+
+        if (user && user.role === 'premium') {
+            statusBox.innerHTML = `
+                <h3 style="color: #fbbf24; margin-top:0;">👑 Suscripción Activa</h3>
+                <p style="color: #ccc;">Hola ${user.nombre}, gracias por ser del Top 1%. Todas tus tareas globales se están sincronizando automáticamente.</p>
+                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; text-align:center;">
+                    Vence el: <b style="color:white;">${user.premiumHasta || 'Indefinido'}</b>
+                </div>
+            `;
+        } else {
+            statusBox.innerHTML = `
+                <h3 style="color: #9ca3af; margin-top:0;">🛑 Plan Gratuito</h3>
+                <p style="color: #ccc;">No tienes acceso a las tareas automáticas del colegio. Obtén tu pase VIP para olvidarte del estrés escolar.</p>
+                <div style="background: #2563eb; color: white; padding: 15px; border-radius: 8px; text-align:center; font-weight:bold; margin-top:15px;">
+                    💎 3.50 Soles / Semana
+                </div>
+                <p style="text-align:center; font-size: 0.8rem; color:#9ca3af; margin-top:10px;">Habla con Migue en el colegio para activar tu cuenta.</p>
+            `;
+        }
+    }
 window.app = App;
 document.addEventListener('DOMContentLoaded', () => App.init());
 
