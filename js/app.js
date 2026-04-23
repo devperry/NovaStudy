@@ -162,75 +162,65 @@ const App = {
         const statusBox = document.getElementById('premium-status');
         const user = Cloud.userData;
 
-        // --- CASO 1: EL USUARIO YA ES PREMIUM ---
-        if (user && user.role === 'premium') {
+        // Limpiar estilos previos que puedan causar bugs
+        statusBox.style.background = "transparent";
+        statusBox.style.border = "none";
+        statusBox.style.padding = "0";
+
+        if (user && (user.role === 'premium' || user.role === 'admin')) {
             statusBox.innerHTML = `
-                <div style="text-align:center;">
-                    <i class="fas fa-crown" style="font-size: 4rem; color: #fbbf24; margin-bottom: 15px;"></i>
-                    <h2 style="margin:0;">¡Eres Miembro VIP!</h2>
-                    <p style="color: #ccc;">Tienes acceso total al sistema del Top 1%.</p>
-                    
-                    <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; margin-top: 20px;">
-                        <span style="font-size:0.9rem; color:#aaa; display:block; margin-bottom:5px;">TU SUSCRIPCIÓN VENCE EL:</span>
-                        <b style="font-size:1.5rem; color:white;">${user.premiumHasta}</b>
+                <div class="card" style="text-align:center; padding: 30px; background: var(--card-bg); border: 2px solid #fbbf24;">
+                    <i class="fas fa-crown" style="font-size: 3.5rem; color: #fbbf24; margin-bottom: 15px;"></i>
+                    <h2 style="margin:0; color:var(--text-main);">¡Miembro VIP Activo!</h2>
+                    <p style="color: var(--text-muted);">Sincronización en la nube activada.</p>
+                    <div style="background: var(--bg); padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid var(--border-color);">
+                        <small style="color:var(--text-muted); font-weight:bold;">TU PLAN VENCE EL:</small><br>
+                        <b style="font-size:1.3rem; color:var(--text-main);">${user.premiumHasta || 'ILIMITADO'}</b>
                     </div>
-                    
-                    <p style="margin-top:20px; font-size:0.85rem; color:#888;">Habla con Migue para renovar antes de la fecha.</p>
-                </div>
-            `;
+                </div>`;
             return;
         }
 
-        // --- CASO 2: EL USUARIO ES ADMIN ---
-        if (user && user.role === 'admin') {
-            statusBox.innerHTML = `
-                <div style="text-align:center; padding: 20px;">
-                    <i class="fas fa-shield-alt" style="font-size: 4rem; color: #ef4444; margin-bottom: 15px;"></i>
-                    <h2>Acceso Administrador</h2>
-                    <p style="color: #ccc;">Tienes todos los beneficios desbloqueados permanentemente.</p>
-                </div>
-            `;
-            return;
-        }
-
-        // --- CASO 3: EL USUARIO ES "FREE" (PÁGINA DE VENTAS) ---
+        // PÁGINA DE VENTAS ADAPTATIVA
         statusBox.innerHTML = `
-            <div class="premium-container">
-                <p style="color: #ccc; margin-bottom:20px;">Únete a los mejores y olvídate de estar preguntando las tareas cada noche.</p>
-                
-                <div class="card" style="background: var(--bg); border:none;">
-                    <ul class="feature-list">
-                        <li class="feature-item"><i class="fas fa-check"></i> ☁️ Tareas Automáticas (Sync en la nube)</li>
-                        <li class="feature-item"><i class="fas fa-check"></i> 📚 Temas de Exámenes detallados</li>
-                        <li class="feature-item"><i class="fas fa-check"></i> 🎨 Temas y Colores Exclusivos</li>
-                        <li class="feature-item"><i class="fas fa-check"></i> 🚀 Acceso al Panel de Estrategia</li>
-                        <li class="feature-item"><i class="fas fa-check"></i> 🔇 Cero anuncios / Notificaciones VIP</li>
-                    </ul>
+            <div style="text-align:center; color: var(--text-main);">
+                <ul style="text-align:left; list-style:none; padding:15px; margin-bottom:25px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color);">
+                    <li style="margin-bottom:12px; font-weight:500;"><i class="fas fa-check-circle" style="color:#10b981; margin-right:8px;"></i> ☁️ Tareas automáticas en la nube</li>
+                    <li style="margin-bottom:12px; font-weight:500;"><i class="fas fa-check-circle" style="color:#10b981; margin-right:8px;"></i> 📚 Temas detallados de exámenes</li>
+                    <li style="margin-bottom:12px; font-weight:500;"><i class="fas fa-check-circle" style="color:#10b981; margin-right:8px;"></i> 🎨 Temas y colores Premium</li>
+                    <li style="margin-bottom:12px; font-weight:500;"><i class="fas fa-check-circle" style="color:#10b981; margin-right:8px;"></i> 🛡️ Soporte prioritario</li>
+                </ul>
+
+                <!-- Plan Semanal Adaptativo -->
+                <div style="background:var(--card-bg); border:2px solid var(--border-color); padding:20px; border-radius:15px; margin-bottom:15px;">
+                    <div style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">PLAN SEMANAL</div>
+                    <div style="font-size:1.8rem; font-weight:800; color:var(--text-main);">3.50 S/</div>
+                    <div style="color:var(--text-muted); font-size:0.8rem;">7 días de acceso VIP</div>
                 </div>
 
-                <h3 style="margin: 25px 0 15px 0; color: white;">Elige tu Plan</h3>
-
-                <div class="plan-card weekly">
-                    <div class="price-subtitle" style="color: var(--text-muted);">PLAN BÁSICO</div>
-                    <div class="price-title" style="color: var(--text-main);">3.50 S/</div>
-                    <div class="price-subtitle" style="color: var(--text-muted);">POR 7 DÍAS DE ACCESO</div>
+                <!-- Plan Mensual (Siempre destaca en oscuro/oro) -->
+                <div style="background: linear-gradient(135deg, #1e2937, #000); padding:25px; border-radius:15px; border:2px solid #fbbf24; position:relative; color: white;">
+                    <div style="position:absolute; top:-12px; right:15px; background:#fbbf24; color:black; font-size:0.7rem; font-weight:bold; padding:4px 10px; border-radius:20px;">MÁS POPULAR</div>
+                    <div style="color:#fbbf24; font-size:0.8rem; font-weight:bold;">PLAN MENSUAL</div>
+                    <div style="font-size:2.2rem; font-weight:800; color:white;">10.00 S/</div>
+                    <div style="color:#aaa; font-size:0.8rem;">30 días (Ahorras 4 soles)</div>
                 </div>
 
-                <div class="plan-card monthly">
-                    <div class="best-value">MÁS POPULAR</div>
-                    <div class="price-subtitle" style="color: #fbbf24;">PLAN ESTUDIANTE ÉLITE</div>
-                    <div class="price-title">10.00 S/</div>
-                    <div class="price-subtitle">POR 1 MES COMPLETO (Ahorras 4 soles)</div>
-                </div>
-
-                <button class="btn-massive" onclick="window.open('https://wa.me/+51 944 738 426?text=Hola%20Migue,%20quiero%20el%20Premium%20de%20TopSchool', '_blank')" style="background:#2563eb; margin-top:20px;">
-                    <i class="fab fa-whatsapp"></i> Hablar con Migue para Activar
+                <button onclick="window.open('https://wa.me/51tu_numero', '_blank')" style="width:100%; background:var(--primary); color:white; border:none; padding:20px; border-radius:12px; margin-top:25px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                    <i class="fab fa-whatsapp"></i> Activar con Migue
                 </button>
-                <p style="font-size:0.75rem; color:#666; margin-top:15px;">La activación es instantánea después de confirmar el pago.</p>
             </div>
         `;
     },
-
+    eliminarMateriaActual() {
+        const nombre = document.getElementById('subject-name-display').innerText;
+        if (confirm(`¿Estás seguro de eliminar "${nombre}"? Se borrarán todas las tareas y notas de esta materia.`)) {
+            Store.deleteMateria(nombre);
+            UI.renderNav(Store.state.materias);
+            UI.renderSelectMaterias(Store.state.materias);
+            this.showView('dashboard');
+        }
+    },
     // --- UI Y NAVEGACIÓN (Resto igual) ---
     cambiarTema(themeName) { document.body.setAttribute('data-theme', themeName); localStorage.setItem('top1_theme', themeName); },
     toggleMenu(forceClose = false) { const s = document.getElementById('sidebar'); if (forceClose) s.classList.remove('open'); else s.classList.toggle('open'); },

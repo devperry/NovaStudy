@@ -30,7 +30,14 @@ export const Store = {
         }
         this.save();
     },
-
+    // --- NUEVO: Borrar Materia ---
+    deleteMateria(nombre) {
+        // Filtramos las materias para quitar la elegida
+        this.state.materias = this.state.materias.filter(m => m.nombre !== nombre);
+        // Opcional: Borrar también todas las tareas que pertenecían a esa materia
+        this.state.actividades = this.state.actividades.filter(a => a.materia !== nombre);
+        this.save();
+    },
     getActividadById(id) { return this.state.actividades.find(a => a.id === id); },
     deleteActividad(id) { this.state.actividades = this.state.actividades.filter(a => a.id !== id); this.save(); },
     setCompletada(id, estado) { const act = this.getActividadById(id); if (act) { act.completada = estado; this.save(); } },
