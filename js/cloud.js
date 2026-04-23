@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAE49hGAMj5ZnoOtN1tZjNilbUrGnZS2WM",
@@ -19,7 +19,6 @@ export const Cloud = {
     user: null,
     userData: null,
 
-    // Genera una huella única para el celular
     getDeviceId() {
         let deviceId = localStorage.getItem('top1_device_id');
         if (!deviceId) {
@@ -29,7 +28,6 @@ export const Cloud = {
         return deviceId;
     },
 
-    // Iniciar el sistema de vigilancia
     initAuth(onLogin, onLogout) {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -37,13 +35,22 @@ export const Cloud = {
                 const docSnap = await getDoc(docRef);
                 
                 if (docSnap.exists()) {
-                    const data = docSnap.data();
+                    let data = docSnap.data();
                     
-                    // SEGURIDAD ANTI-GORRONES
                     if (data.deviceId !== this.getDeviceId()) {
-                        alert("🚨 ACCESO DENEGADO: Esta cuenta ya está vinculada a otro celular. Habla con el Administrador.");
+                        alert("🚨 ACCESO DENEGADO: Cuenta vinculada a otro celular. Habla con Migue.");
                         await this.logout();
                         return;
+                    }
+
+                    // AUTO-CADUCIDAD PREMIUM
+                    if (data.role === 'premium' && data.premiumHasta) {
+                        const hoy = new Date().toISOString().split('T')[0];
+                        if (hoy > data.premiumHasta) {
+                            await updateDoc(docRef, { role: 'free' });
+                            data.role = 'free';
+                            alert("🛑 Tu suscripción Premium ha caducado.");
+                        }
                     }
 
                     this.user = user;
@@ -62,31 +69,50 @@ export const Cloud = {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-            
-            // Guardar al usuario en la base de datos (Gratis por defecto)
             await setDoc(doc(db, "users", user.uid), {
                 email: email,
                 nombre: nombre,
-                role: "free", // "free", "premium" o "admin"
+                role: "free",
                 deviceId: this.getDeviceId(),
                 premiumHasta: null
             });
             return { success: true };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
+        } catch (error) { return { success: false, error: error.message }; }
     },
 
     async login(email, password) {
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            return { success: true };
-        } catch (error) {
-            return { success: false, error: "Correo o contraseña incorrectos." };
-        }
+        try { await signInWithEmailAndPassword(auth, email, password); return { success: true }; } 
+        catch (error) { return { success: false, error: "Correo o contraseña incorrectos." }; }
     },
 
-    async logout() {
-        await signOut(auth);
+    async logout() { await signOut(auth); },
+
+    // --- PODERES DE ADMINISTRADOR ---
+    async getAllUsers() {
+        const snapshot = await getDocs(collection(db, "users"));
+        const users =[];
+        snapshot.forEach(doc => users.push({ uid: doc.id, ...doc.data() }));
+        return users;
+    },
+
+    async grantPremium(uid, dias) {
+        const docRef = doc(db, "users", uid);
+        const vencimiento = new Date();
+        vencimiento.setDate(vencimiento.getDate() + dias);
+        const fechaStr = vencimiento.toISOString().split('T')[0];
+        
+        await updateDoc(docRef, { role: 'premium', premiumHasta: fechaStr });
+        return fechaStr;
+    },
+
+    async addGlobalTask(taskData) {
+        await addDoc(collection(db, "globalTasks"), taskData);
+    },
+
+    async getGlobalTasks() {
+        const snapshot = await getDocs(collection(db, "globalTasks"));
+        const tasks =[];
+        snapshot.forEach(doc => tasks.push({ globalId: doc.id, ...doc.data() }));
+        return tasks;
     }
 };
