@@ -37,7 +37,12 @@ export const Cloud = {
                 if (docSnap.exists()) {
                     let data = docSnap.data();
                     
-                    if (data.deviceId !== this.getDeviceId()) {
+                    if (!data.deviceId || data.deviceId === "") {
+                        // Si el Admin (tú) borró el ID, guardamos el del nuevo celular automáticamente
+                        await updateDoc(docRef, { deviceId: this.getDeviceId() });
+                        data.deviceId = this.getDeviceId();
+                        console.log("📱 Nuevo celular vinculado exitosamente.");
+                    } else if (data.deviceId !== this.getDeviceId()) {
                         alert("🚨 ACCESO DENEGADO: Cuenta vinculada a otro celular. Habla con Migue.");
                         await this.logout();
                         return;

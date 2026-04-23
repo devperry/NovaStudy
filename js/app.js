@@ -107,6 +107,7 @@ const App = {
                 <div style="display:flex; gap:10px; margin-top:10px;">
                     <button onclick="app.darPremium('${u.uid}', 7)" style="flex:1; background:#3b82f6; color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold;">+ 7 Días</button>
                     <button onclick="app.darPremium('${u.uid}', 30)" style="flex:1; background:#fbbf24; color:black; border:none; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold;">+ 30 Días</button>
+                    <button onclick="app.resetDevice('${u.uid}')" style="width:100%; margin-top:5px; background:var(--danger); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold;"><i class="fas fa-mobile-alt"></i> Reset Celular</button>
                 </div>
             </div>
         `).join('');
@@ -116,6 +117,16 @@ const App = {
         if (confirm(`¿Dar ${dias} días de Premium a este usuario? (Asegúrate de que ya te pagó)`)) {
             const nuevaFecha = await Cloud.grantPremium(uid, dias);
             alert(`✅ Premium activado hasta: ${nuevaFecha}`);
+            this.loadAdminUsers();
+        }
+    },
+    
+    async resetDevice(uid) {
+        if (confirm("¿Permitir que este usuario inicie sesión en un celular nuevo?")) {
+            // Importamos la función updateDoc y doc de Firebase para hacerlo desde aquí
+            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+            await updateDoc(doc(Cloud.db, "users", uid), { deviceId: "" });
+            alert("✅ Dispositivo reseteado. El alumno ya puede iniciar sesión en su nuevo celular.");
             this.loadAdminUsers();
         }
     },
