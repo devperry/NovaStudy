@@ -162,33 +162,73 @@ const App = {
         const statusBox = document.getElementById('premium-status');
         const user = Cloud.userData;
 
+        // --- CASO 1: EL USUARIO YA ES PREMIUM ---
         if (user && user.role === 'premium') {
             statusBox.innerHTML = `
-                <h3 style="color: #fbbf24; margin-top:0;">👑 Suscripción Activa</h3>
-                <p style="color: #ccc;">Hola ${user.nombre}, gracias por ser del Top 1%. Todas tus tareas globales se están sincronizando.</p>
-                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; text-align:center;">
-                    Vence el: <b style="color:white;">${user.premiumHasta}</b>
+                <div style="text-align:center;">
+                    <i class="fas fa-crown" style="font-size: 4rem; color: #fbbf24; margin-bottom: 15px;"></i>
+                    <h2 style="margin:0;">¡Eres Miembro VIP!</h2>
+                    <p style="color: #ccc;">Tienes acceso total al sistema del Top 1%.</p>
+                    
+                    <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; margin-top: 20px;">
+                        <span style="font-size:0.9rem; color:#aaa; display:block; margin-bottom:5px;">TU SUSCRIPCIÓN VENCE EL:</span>
+                        <b style="font-size:1.5rem; color:white;">${user.premiumHasta}</b>
+                    </div>
+                    
+                    <p style="margin-top:20px; font-size:0.85rem; color:#888;">Habla con Migue para renovar antes de la fecha.</p>
                 </div>
             `;
-        } else if (user && user.role === 'admin') {
-            statusBox.innerHTML = `<h3 style="color: #ef4444; margin-top:0;">🛡️ Eres el Administrador</h3><p style="color:#ccc;">Tienes acceso ilimitado a todo el sistema.</p>`;
-        } else {
-            // PLANES DE PAGO ACTUALIZADOS
-            statusBox.innerHTML = `
-                <h3 style="color: #9ca3af; margin-top:0;">🛑 Plan Gratuito</h3>
-                <p style="color: #ccc;">No tienes acceso a las tareas automáticas del colegio. Obtén tu pase VIP.</p>
-                
-                <div style="display: flex; gap: 10px; justify-content: center; margin-top:15px; flex-wrap:wrap;">
-                    <div style="background: #2563eb; color: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 120px; text-align:center; font-weight:bold;">
-                        💎 3.50 S/ <br><span style="font-size:0.8rem; font-weight:normal;">1 Semana</span>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; padding: 15px; border-radius: 8px; flex: 1; min-width: 120px; text-align:center; font-weight:bold;">
-                        👑 10.00 S/ <br><span style="font-size:0.8rem; font-weight:normal;">1 Mes (Ahorras!)</span>
-                    </div>
-                </div>
-                <p style="text-align:center; font-size: 0.85rem; color:#9ca3af; margin-top:15px;">Habla con Migue en el colegio para activar tu cuenta.</p>
-            `;
+            return;
         }
+
+        // --- CASO 2: EL USUARIO ES ADMIN ---
+        if (user && user.role === 'admin') {
+            statusBox.innerHTML = `
+                <div style="text-align:center; padding: 20px;">
+                    <i class="fas fa-shield-alt" style="font-size: 4rem; color: #ef4444; margin-bottom: 15px;"></i>
+                    <h2>Acceso Administrador</h2>
+                    <p style="color: #ccc;">Tienes todos los beneficios desbloqueados permanentemente.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // --- CASO 3: EL USUARIO ES "FREE" (PÁGINA DE VENTAS) ---
+        statusBox.innerHTML = `
+            <div class="premium-container">
+                <p style="color: #ccc; margin-bottom:20px;">Únete a los mejores y olvídate de estar preguntando las tareas cada noche.</p>
+                
+                <div class="card" style="background: var(--bg); border:none;">
+                    <ul class="feature-list">
+                        <li class="feature-item"><i class="fas fa-check"></i> ☁️ Tareas Automáticas (Sync en la nube)</li>
+                        <li class="feature-item"><i class="fas fa-check"></i> 📚 Temas de Exámenes detallados</li>
+                        <li class="feature-item"><i class="fas fa-check"></i> 🎨 Temas y Colores Exclusivos</li>
+                        <li class="feature-item"><i class="fas fa-check"></i> 🚀 Acceso al Panel de Estrategia</li>
+                        <li class="feature-item"><i class="fas fa-check"></i> 🔇 Cero anuncios / Notificaciones VIP</li>
+                    </ul>
+                </div>
+
+                <h3 style="margin: 25px 0 15px 0; color: white;">Elige tu Plan</h3>
+
+                <div class="plan-card weekly">
+                    <div class="price-subtitle" style="color: var(--text-muted);">PLAN BÁSICO</div>
+                    <div class="price-title" style="color: var(--text-main);">3.50 S/</div>
+                    <div class="price-subtitle" style="color: var(--text-muted);">POR 7 DÍAS DE ACCESO</div>
+                </div>
+
+                <div class="plan-card monthly">
+                    <div class="best-value">MÁS POPULAR</div>
+                    <div class="price-subtitle" style="color: #fbbf24;">PLAN ESTUDIANTE ÉLITE</div>
+                    <div class="price-title">10.00 S/</div>
+                    <div class="price-subtitle">POR 1 MES COMPLETO (Ahorras 4 soles)</div>
+                </div>
+
+                <button class="btn-massive" onclick="window.open('https://wa.me/+51 944 738 426?text=Hola%20Migue,%20quiero%20el%20Premium%20de%20TopSchool', '_blank')" style="background:#2563eb; margin-top:20px;">
+                    <i class="fab fa-whatsapp"></i> Hablar con Migue para Activar
+                </button>
+                <p style="font-size:0.75rem; color:#666; margin-top:15px;">La activación es instantánea después de confirmar el pago.</p>
+            </div>
+        `;
     },
 
     // --- UI Y NAVEGACIÓN (Resto igual) ---
