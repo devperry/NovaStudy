@@ -284,6 +284,20 @@ const App = {
         this.renderFormSubtareas(); // Dibuja los pasos
         this.showView('form');
     },
+    
+    renderFormSubtareas() {
+        const container = document.getElementById('form-subtasks-list');
+        if (this.tempSubtareas.length === 0) {
+            container.innerHTML = '<p style="font-size:0.85rem; color:var(--text-muted); margin:0;">No hay pasos añadidos aún.</p>';
+            return;
+        }
+        container.innerHTML = this.tempSubtareas.map((sub, index) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); padding:10px; border-radius:6px; margin-bottom:5px; border:1px solid var(--border-color);">
+                <span style="font-size:0.9rem; color:var(--text-main);">${sub.texto}</span>
+                <button onclick="app.eliminarSubtareaForm(${index})" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+        `).join('');
+    },
 
     agregarSubtareaForm() {
         const input = document.getElementById('form-subtask-input');
