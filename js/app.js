@@ -61,7 +61,8 @@ const App = {
                     notas: gt.notas,
                     completada: false,
                     calificacion: null,
-                    subtareas:[]
+                    subtareas:[],
+                    tempSubtareas:[]
                 });
                 
                 // Autocrear la materia en el celular del alumno si no la tiene
@@ -261,28 +262,66 @@ const App = {
         this.editModeId = id;
         if (id) {
             const act = Store.getActividadById(id);
-            document.getElementById('titulo').value = act.titulo; document.getElementById('materia-select').value = act.materia;
-            document.getElementById('tipo-select').value = act.tipo; document.getElementById('fecha-input').value = act.fecha;
-            document.getElementById('dificultad-select').value = act.dificultad; document.getElementById('notas-input').value = act.notas;
+            document.getElementById('titulo').value = act.titulo; 
+            document.getElementById('materia-select').value = act.materia;
+            document.getElementById('tipo-select').value = act.tipo; 
+            document.getElementById('fecha-input').value = act.fecha;
+            document.getElementById('dificultad-select').value = act.dificultad; 
+            document.getElementById('notas-input').value = act.notas;
+            // Clonamos los pasos que ya existen para editarlos en el formulario
+            this.tempSubtareas = act.subtareas ? [...act.subtareas] :[];
         } else {
-            document.getElementById('titulo').value = ''; document.getElementById('fecha-input').value = ''; document.getElementById('notas-input').value = '';
+            document.getElementById('titulo').value = ''; 
+            document.getElementById('fecha-input').value = ''; 
+            document.getElementById('notas-input').value = '';
             if (this.vistaAnterior !== 'dashboard' && this.vistaAnterior !== 'aspecto' && this.vistaAnterior !== 'premium' && this.vistaAnterior !== 'admin') {
                 document.getElementById('materia-select').value = this.vistaAnterior;
             }
+            // Empezamos con la lista de pasos vacía
+            this.tempSubtareas =[];
         }
+        
+        this.renderFormSubtareas(); // Dibuja los pasos
         this.showView('form');
+    },
+
+    agregarSubtareaForm() {
+        const input = document.getElementById('form-subtask-input');
+        const texto = input.value.trim();
+        if(texto) {
+            this.tempSubtareas.push({ texto: texto, completada: false });
+            input.value = '';
+            this.renderFormSubtareas();
+        }
+    },
+
+    eliminarSubtareaForm(index) {
+        this.tempSubtareas.splice(index, 1);
+        this.renderFormSubtareas();
     },
 
     cerrarFormulario() {
         if (['dashboard', 'aspecto', 'premium', 'admin'].includes(this.vistaAnterior)) this.showView('dashboard');
         else this.showView('subject', this.vistaAnterior);
     },
-
     guardarActividad() {
-        const titulo = document.getElementById('titulo').value; const fecha = document.getElementById('fecha-input').value;
+        const titulo = document.getElementById('titulo').value; 
+        const fecha = document.getElementById('fecha-input').value;
         if (!titulo || !fecha) return alert("Falta título o fecha.");
-        Store.guardarActividad({ titulo, materia: document.getElementById('materia-select').value, tipo: document.getElementById('tipo-select').value, fecha, dificultad: document.getElementById('dificultad-select').value, notas: document.getElementById('notas-input').value }, this.editModeId);
-        this.cerrarFormulario(); this.refrescarVistaActual();
+        
+        const data = { 
+            titulo, 
+            materia: document.getElementById('materia-select').value, 
+            tipo: document.getElementById('tipo-select').value, 
+            fecha, 
+            dificultad: document.getElementById('dificultad-select').value, 
+            notas: document.getElementById('notas-input').value,
+            subtareas: this.tempSubtareas // ¡Pasamos la lista al guardar!
+        };
+        
+        Store.guardarActividad(data, this.editModeId);
+        this.cerrarFormulario(); 
+        this.refrescarVistaActual();
     },
 
     agregarMateria() { const n = prompt("Nombre de la nueva materia:"); if (Store.addMateria(n)) { UI.renderNav(Store.state.materias); UI.renderSelectMaterias(Store.state.materias); } },

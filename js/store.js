@@ -21,23 +21,34 @@ export const Store = {
         return true;
     },
 
+    // --- EL CEREBRO DE GUARDADO ---
     guardarActividad(actividadData, editId = null) {
         if (editId) {
             const index = this.state.actividades.findIndex(a => a.id === editId);
-            if (index !== -1) this.state.actividades[index] = { ...this.state.actividades[index], ...actividadData };
+            if (index !== -1) {
+                // Al editar, actualizamos todo incluyendo la nueva checklist del formulario
+                this.state.actividades[index] = { ...this.state.actividades[index], ...actividadData };
+            }
         } else {
-            this.state.actividades.push({ id: Date.now(), ...actividadData, completada: false, calificacion: null, subtareas: [] });
+            // Al crear nueva
+            this.state.actividades.push({ 
+                id: Date.now(), 
+                ...actividadData, 
+                completada: false, 
+                calificacion: null, 
+                // Si el formulario no envió subtareas, ponemos un array vacío
+                subtareas: actividadData.subtareas || [] 
+            });
         }
         this.save();
     },
-    // --- NUEVO: Borrar Materia ---
+
     deleteMateria(nombre) {
-        // Filtramos las materias para quitar la elegida
         this.state.materias = this.state.materias.filter(m => m.nombre !== nombre);
-        // Opcional: Borrar también todas las tareas que pertenecían a esa materia
         this.state.actividades = this.state.actividades.filter(a => a.materia !== nombre);
         this.save();
     },
+
     getActividadById(id) { return this.state.actividades.find(a => a.id === id); },
     deleteActividad(id) { this.state.actividades = this.state.actividades.filter(a => a.id !== id); this.save(); },
     setCompletada(id, estado) { const act = this.getActividadById(id); if (act) { act.completada = estado; this.save(); } },
@@ -46,7 +57,6 @@ export const Store = {
     getPromedio(materiaNombre) {
         const acts = this.state.actividades.filter(a => a.materia === materiaNombre && a.calificacion !== null && a.calificacion !== undefined && a.calificacion.toString().trim() !== '');
         if(acts.length === 0) return null;
-        
         let suma = 0; let count = 0;
         acts.forEach(a => {
             let val = a.calificacion.toString().toUpperCase().trim();
