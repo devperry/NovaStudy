@@ -78,7 +78,65 @@ const App = {
             console.log(`☁️ ${added} Tareas nuevas inyectadas desde la Nube.`);
         }
     },
+    // --- LÓGICA DE FIREBASE Y USUARIOS (REDISEÑO) ---
+    
+    authMode: 'login', // Variable para saber en qué pestaña estamos
 
+    switchAuthMode(mode) {
+        this.authMode = mode;
+        const isLogin = mode === 'login';
+        
+        // Cambiar estilos de las pestañas
+        document.getElementById('tab-login').style.background = isLogin ? 'var(--card-bg)' : 'transparent';
+        document.getElementById('tab-login').style.color = isLogin ? 'var(--text-main)' : 'var(--text-muted)';
+        document.getElementById('tab-login').style.boxShadow = isLogin ? '0 2px 5px rgba(0,0,0,0.1)' : 'none';
+        
+        document.getElementById('tab-register').style.background = !isLogin ? 'var(--card-bg)' : 'transparent';
+        document.getElementById('tab-register').style.color = !isLogin ? 'var(--text-main)' : 'var(--text-muted)';
+        document.getElementById('tab-register').style.boxShadow = !isLogin ? '0 2px 5px rgba(0,0,0,0.1)' : 'none';
+
+        // Mostrar/Ocultar el campo de Nombre
+        document.getElementById('auth-name-group').style.display = isLogin ? 'none' : 'block';
+        
+        // Cambiar textos
+        document.getElementById('auth-subtitle').innerText = isLogin ? 'Ingresa a tu cuenta para continuar' : 'Únete al Top 1% de tu colegio';
+        document.getElementById('auth-main-btn').innerText = isLogin ? 'Entrar al Sistema' : 'Crear mi Cuenta';
+    },
+
+    async submitAuth() {
+        const email = document.getElementById('auth-email').value;
+        const pass = document.getElementById('auth-password').value;
+        const btn = document.getElementById('auth-main-btn');
+        
+        if(!email || !pass) return alert("Por favor, llena los campos.");
+
+        // Efecto visual de carga
+        const originalText = btn.innerText;
+        btn.innerText = "Procesando...";
+        btn.disabled = true;
+
+        if (this.authMode === 'login') {
+            const res = await Cloud.login(email, pass);
+            if(!res.success) alert(res.error);
+        } else {
+            const nombre = document.getElementById('auth-name').value.trim();
+            if(!nombre) {
+                alert("Por favor, dinos tu nombre.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+                return;
+            }
+            const res = await Cloud.register(email, pass, nombre);
+            if(!res.success) alert(res.error);
+        }
+
+        btn.innerText = originalText;
+        btn.disabled = false;
+    },
+
+    logout() {
+        if(confirm("¿Seguro que quieres cerrar sesión?")) Cloud.logout();
+    },
     // --- PANEL ADMIN ---
     switchAdminTab(tab) {
         document.getElementById('tab-admin-users').classList.remove('active');
@@ -149,27 +207,11 @@ const App = {
         document.getElementById('admin-notas').value = '';
     },
 
-    // --- LÓGICA DE FIREBASE Y USUARIOS ---
-    async login() {
-        const email = document.getElementById('auth-email').value;
-        const pass = document.getElementById('auth-password').value;
-        if(!email || !pass) return alert("Llena los campos");
-        const res = await Cloud.login(email, pass);
-        if(!res.success) alert(res.error);
-    },
+  
 
-    async register() {
-        const email = document.getElementById('auth-email').value;
-        const pass = document.getElementById('auth-password').value;
-        if(!email || !pass) return alert("Llena los campos");
-        const nombre = prompt("¿Cómo te llamas?");
-        if(!nombre) return;
-        const res = await Cloud.register(email, pass, nombre);
-        if(!res.success) alert(res.error);
-    },
+   
 
-    logout() { if(confirm("¿Cerrar sesión?")) Cloud.logout(); },
-
+    
     renderPremium() {
         const statusBox = document.getElementById('premium-status');
         const user = Cloud.userData;
@@ -284,7 +326,8 @@ const App = {
         this.renderFormSubtareas(); // Dibuja los pasos
         this.showView('form');
     },
-    
+
+
     renderFormSubtareas() {
         const container = document.getElementById('form-subtasks-list');
         if (this.tempSubtareas.length === 0) {
@@ -298,6 +341,7 @@ const App = {
             </div>
         `).join('');
     },
+
 
     agregarSubtareaForm() {
         const input = document.getElementById('form-subtask-input');

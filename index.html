@@ -57,24 +57,44 @@
     <div id="nav-admin-btn" class="nav-item" onclick="app.showView('admin'); app.toggleMenu(true);" style="display:none; color: var(--danger); font-weight:bold;">
         <i class="fas fa-shield-alt"></i> Panel Admin 🛡️
     </div>
-    <!-- NUEVO: VISTA DE LOGIN Y REGISTRO -->
-    <div id="view-auth" class="view" style="max-width: 400px; margin: 0 auto; text-align: center; padding-top: 50px;">
-        <i class="fas fa-bolt" style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></i>
-        <h1 style="margin-bottom: 5px;">SystemTopSchool</h1>
-        <p style="color: var(--text-muted); margin-bottom: 30px;">Inicia sesión para sincronizar tus tareas.</p>
+    
+<!-- VISTA DE LOGIN Y REGISTRO (REDISEÑADA Y CORREGIDA) -->
+    <div id="view-auth" class="view">
+        <!-- Contenedor interno para centrar (así no rompemos la clase .view) -->
+        <div style="display:flex; flex-direction:column; justify-content:center; min-height:100vh; padding:20px; background:var(--bg);">
+            <div style="max-width: 400px; margin: 0 auto; width: 100%; text-align: center;">
+                
+                <!-- Logo Grande -->
+                <div style="width: 80px; height: 80px; background: var(--primary); color: white; border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 3rem; margin: 0 auto 20px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                
+                <h1 style="margin: 0 0 10px 0; font-size: 2rem; color: var(--text-main);">TopSchool</h1>
+                <p id="auth-subtitle" style="color: var(--text-muted); margin-bottom: 30px;">Ingresa a tu cuenta para continuar</p>
 
-        <div class="card" style="text-align: left;">
-            <label style="font-weight:bold;">Correo Electrónico</label>
-            <input type="email" id="auth-email" class="big-control" placeholder="tu@correo.com" style="margin-bottom: 15px; padding: 12px;">
-            
-            <label style="font-weight:bold;">Contraseña</label>
-            <input type="password" id="auth-password" class="big-control" placeholder="******" style="margin-bottom: 20px; padding: 12px;">
-            
-            <button class="btn-massive" onclick="app.login()" style="margin-top: 0; padding: 14px;">Iniciar Sesión</button>
-            
-            <p style="text-align: center; margin-top: 20px; font-size: 0.9rem;">
-                ¿No tienes cuenta? <a href="#" onclick="app.register()" style="color: var(--primary); font-weight: bold;">Regístrate aquí</a>
-            </p>
+                <div class="card" style="text-align: left; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid var(--border-color);">
+                    
+                    <!-- Pestañas (Tabs) -->
+                    <div style="display:flex; background:var(--bg); border-radius:12px; padding:6px; margin-bottom:25px; border: 1px solid var(--border-color);">
+                        <button id="tab-login" onclick="app.switchAuthMode('login')" style="flex:1; padding:12px; border:none; border-radius:8px; background:var(--card-bg); color:var(--text-main); font-weight:bold; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:0.3s;">Iniciar Sesión</button>
+                        <button id="tab-register" onclick="app.switchAuthMode('register')" style="flex:1; padding:12px; border:none; border-radius:8px; background:transparent; color:var(--text-muted); font-weight:bold; cursor:pointer; transition:0.3s;">Crear Cuenta</button>
+                    </div>
+
+                    <!-- Campo de Nombre (Solo para Registro) -->
+                    <div id="auth-name-group" style="display: none; transition: 0.3s;">
+                        <label style="font-weight:bold; font-size:0.85rem; color:var(--text-muted);">Tu Nombre (o Apodo)</label>
+                        <input type="text" id="auth-name" class="big-control" placeholder="Ej: Migue" style="margin-top:8px; margin-bottom: 15px; padding: 14px; border-radius: 10px;">
+                    </div>
+
+                    <label style="font-weight:bold; font-size:0.85rem; color:var(--text-muted);">Correo Electrónico</label>
+                    <input type="email" id="auth-email" class="big-control" placeholder="tu@correo.com" style="margin-top:8px; margin-bottom: 15px; padding: 14px; border-radius: 10px;">
+                    
+                    <label style="font-weight:bold; font-size:0.85rem; color:var(--text-muted);">Contraseña</label>
+                    <input type="password" id="auth-password" class="big-control" placeholder="••••••••" style="margin-top:8px; margin-bottom: 25px; padding: 14px; border-radius: 10px;">
+                    
+                    <button id="auth-main-btn" class="btn-massive" onclick="app.submitAuth()" style="margin-top: 0; padding: 16px; border-radius:12px; font-size:1.1rem; box-shadow:0 4px 15px rgba(37,99,235,0.3);">Entrar al Sistema</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -97,7 +117,6 @@
     <!-- VISTA POR MATERIA -->
     <div id="view-subject" class="view">
         <button onclick="app.showView('dashboard')" style="background:none; border:none; font-weight:bold; margin-bottom:15px; font-size:1.1rem; cursor:pointer; padding: 10px 0; color:var(--text-main);"><i class="fas fa-arrow-left"></i> Volver</button>
-        
         <div class="subject-header">
             <h1 id="subject-name-display" style="margin:0; font-size: 2.2rem;">Materia</h1>
             <div id="subject-average" class="average-badge">
@@ -182,7 +201,7 @@
         </div>
     </div>
     <!-- VISTA FORMULARIO GIGANTE -->
-    <div id="view-form" class="view">
+<div id="view-form" class="view">
         <div class="form-header">
             <h1 id="form-title" style="margin:0;">Crear Actividad</h1>
             <button class="form-close-btn" onclick="app.cerrarFormulario()">❌ Cancelar</button>
