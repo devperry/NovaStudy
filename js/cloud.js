@@ -31,40 +31,67 @@ export const Cloud = {
     initAuth(onLogin, onLogout) {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const docRef = doc(db, "users", user.uid);
-                const docSnap = await getDoc(docRef);
+                const hoy = new Date().toISOString().split('T')[0];
                 
-                if (docSnap.exists()) {
-                    let data = docSnap.data();
+                // 1. PASE VIP OFFLINE (Memoria Rápida)
+                const localData = localStorage.getItem('top1_user_data');
+                if (localData) {
+                    let parsedData = JSON.parse(localData);
                     
-                    if (!data.deviceId || data.deviceId === "") {
-                        // Si el Admin (tú) borró el ID, guardamos el del nuevo celular automáticamente
-                        await updateDoc(docRef, { deviceId: this.getDeviceId() });
-                        data.deviceId = this.getDeviceId();
-                        console.log("📱 Nuevo celular vinculado exitosamente.");
-                    } else if (data.deviceId !== this.getDeviceId()) {
-                        alert("🚨 ACCESO DENEGADO: Cuenta vinculada a otro celular. Habla con Migue.");
-                        await this.logout();
-                        return;
-                    }
-
-                    // AUTO-CADUCIDAD PREMIUM
-                    if (data.role === 'premium' && data.premiumHasta) {
-                        const hoy = new Date().toISOString().split('T')[0];
-                        if (hoy > data.premiumHasta) {
-                            await updateDoc(docRef, { role: 'free' });
-                            data.role = 'free';
-                            alert("🛑 Tu suscripción Premium ha caducado.");
+                    // SEGURIDAD OFFLINE: Si no hay internet pero la fecha ya venció, le quitamos el premium localmente
+                    if (parsedData.role === 'premium' && parsedData.premiumHasta) {
+                        if (hoy > parsedData.premiumHasta) {
+                            parsedData.role = 'free'; // Downgrade automático offline
+                            localStorage.setItem('top1_user_data', JSON.stringify(parsedData));
                         }
                     }
-
+                    
                     this.user = user;
-                    this.userData = data;
-                    onLogin(data);
+                    this.userData = parsedData;
+                    onLogin(this.userData);
+                }
+
+                // 2. SINCRONIZACIÓN CON EL SERVIDOR (Si hay internet)
+                try {
+                    const docRef = doc(db, "users", user.uid);
+                    const docSnap = await getDoc(docRef);
+                    
+                    if (docSnap.exists()) {
+                        let data = docSnap.data();
+                        
+                        // Lógica Anti-Gorrones (Cambio de celular)
+                        if (!data.deviceId || data.deviceId === "") {
+                            await updateDoc(docRef, { deviceId: this.getDeviceId() });
+                            data.deviceId = this.getDeviceId();
+                        } else if (data.deviceId !== this.getDeviceId()) {
+                            alert("🚨 ACCESO DENEGADO: Cuenta vinculada a otro celular.");
+                            await this.logout();
+                            return;
+                        }
+
+                        // Lógica de Caducidad Premium en el Servidor
+                        if (data.role === 'premium' && data.premiumHasta) {
+                            if (hoy > data.premiumHasta) {
+                                await updateDoc(docRef, { role: 'free' });
+                                data.role = 'free';
+                                alert("🛑 Tu suscripción Premium ha caducado.");
+                            }
+                        }
+
+                        this.user = user;
+                        this.userData = data;
+                        localStorage.setItem('top1_user_data', JSON.stringify(data));
+                        
+                        // Si es su primera vez iniciando sesión, no tenía localData, así que lo dejamos pasar ahora
+                        if (!localData) onLogin(data);
+                    }
+                } catch (error) {
+                    console.log("☁️ Modo Offline: No hay conexión con la Nube.");
                 }
             } else {
                 this.user = null;
                 this.userData = null;
+                localStorage.removeItem('top1_user_data');
                 onLogout();
             }
         });
@@ -94,10 +121,15 @@ export const Cloud = {
 
     // --- PODERES DE ADMINISTRADOR ---
     async getAllUsers() {
-        const snapshot = await getDocs(collection(db, "users"));
-        const users =[];
-        snapshot.forEach(doc => users.push({ uid: doc.id, ...doc.data() }));
-        return users;
+        try {
+            const snapshot = await getDocs(collection(db, "users"));
+            const users = [];
+            snapshot.forEach(doc => users.push({ uid: doc.id, ...doc.data() }));
+            return users;
+        } catch (error) {
+            alert("Sin internet: No puedes ver la lista de alumnos.");
+            return [];
+        }
     },
 
     async grantPremium(uid, dias) {
@@ -105,7 +137,6 @@ export const Cloud = {
         const vencimiento = new Date();
         vencimiento.setDate(vencimiento.getDate() + dias);
         const fechaStr = vencimiento.toISOString().split('T')[0];
-        
         await updateDoc(docRef, { role: 'premium', premiumHasta: fechaStr });
         return fechaStr;
     },
@@ -115,9 +146,14 @@ export const Cloud = {
     },
 
     async getGlobalTasks() {
-        const snapshot = await getDocs(collection(db, "globalTasks"));
-        const tasks =[];
-        snapshot.forEach(doc => tasks.push({ globalId: doc.id, ...doc.data() }));
-        return tasks;
+        try {
+            const snapshot = await getDocs(collection(db, "globalTasks"));
+            const tasks = [];
+            snapshot.forEach(doc => tasks.push({ globalId: doc.id, ...doc.data() }));
+            return tasks;
+        } catch (error) {
+            console.log("☁️ Modo Offline: No se descargaron tareas de la Nube.");
+            return [];
+        }
     }
 };

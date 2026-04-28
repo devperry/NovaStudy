@@ -21,6 +21,8 @@ self.addEventListener('install', (e) => {
   );
 });
 
+
+
 // 2. ACTIVAR: Borra la basura antigua (v1, v2) para que no haya bugs
 self.addEventListener('activate', (e) => {
   e.waitUntil(
