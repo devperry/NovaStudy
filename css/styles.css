@@ -165,3 +165,109 @@ main { flex: 1; overflow-y: auto; padding: 80px 20px 100px 20px; }
 
 .price-title { font-size: 1.5rem; font-weight: 800; margin: 5px 0; }
 .price-subtitle { font-size: 0.8rem; opacity: 0.8; }
+
+
+/* --- MENÚ DE PERFIL (HEADER) --- */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.profile-dropdown {
+    position: absolute;
+    top: 60px;
+    right: 15px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    width: 250px;
+    padding: 15px;
+    display: none; /* Oculto por defecto */
+    flex-direction: column;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.profile-dropdown.show {
+    display: flex;
+}
+
+.profile-header-info {
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.profile-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 5px 0 2px 0;
+}
+
+.profile-email {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.profile-role-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.profile-role-badge.free { background: #e5e7eb; color: #4b5563; }
+.profile-role-badge.premium { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+.profile-role-badge.admin { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
+
+.profile-menu-btn {
+    background: transparent;
+    border: none;
+    padding: 10px;
+    text-align: left;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-main);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: 0.2s;
+}
+
+.profile-menu-btn:hover {
+    background: var(--bg);
+}
+
+.profile-menu-btn.logout {
+    color: var(--danger);
+    margin-top: 10px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

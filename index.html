@@ -15,11 +15,46 @@
 </head>
 <body data-theme="default">
 
+<!-- Cabecera Mobile + Buscador + Perfil -->
 <div class="mobile-header">
     <button class="menu-btn" onclick="app.toggleMenu()"><i class="fas fa-bars"></i></button>
+    
     <div class="search-bar">
         <i class="fas fa-search" style="color: var(--text-muted);"></i>
         <input type="text" id="global-search" placeholder="Buscar..." oninput="app.realizarBusqueda()">
+    </div>
+
+    <!-- NUEVO: Botón de Perfil Circular -->
+    <div class="header-actions">
+        <button id="header-profile-btn" class="profile-btn" onclick="app.toggleProfileMenu()">
+            <!-- La letra inicial se pondrá desde JS -->
+            ?
+        </button>
+    </div>
+
+    <!-- MENÚ FLOTANTE DEL PERFIL -->
+    <div id="profile-dropdown" class="profile-dropdown">
+        <div class="profile-header-info">
+            <!-- Icono grande dentro del menú -->
+            <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto;">
+                <i class="fas fa-user"></i>
+            </div>
+            <h3 id="prof-name" class="profile-name">Cargando...</h3>
+            <p id="prof-email" class="profile-email">---</p>
+            <div id="prof-badge" class="profile-role-badge free">GRATIS</div>
+        </div>
+
+        <button class="profile-menu-btn" onclick="app.showView('premium'); app.toggleProfileMenu();">
+            <i class="fas fa-crown" style="color:#fbbf24;"></i> Mi Suscripción VIP
+        </button>
+        
+        <button class="profile-menu-btn" onclick="app.showView('aspecto'); app.toggleProfileMenu();">
+            <i class="fas fa-palette" style="color:#8b5cf6;"></i> Personalizar Aspecto
+        </button>
+
+        <button class="profile-menu-btn logout" onclick="app.logout()">
+            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </button>
     </div>
 </div>
 
@@ -35,10 +70,6 @@
 <div class="nav-item" onclick="app.showView('premium'); app.toggleMenu(true);" style="color: #fbbf24;">
         <i class="fas fa-crown"></i> Club VIP (Premium)
 </div>
-    <!-- Pestaña de Temas -->
-    <div class="nav-item" onclick="app.showView('aspecto'); app.toggleMenu(true);" style="color: var(--primary);">
-        <i class="fas fa-paint-brush"></i> Aspecto & Temas 👑
-    </div>
     
     <div style="margin-top: 30px;">
         <span style="font-size:0.9rem; font-weight:bold; color:var(--text-muted); margin-left:12px;">MIS MATERIAS</span>
@@ -46,9 +77,6 @@
         <div class="nav-item" onclick="app.agregarMateria()" style="margin-top:15px; color: var(--primary);">
             <i class="fas fa-plus"></i> Añadir Materia
         </div>
-    </div>
-    <div class="nav-item" onclick="app.logout()" style="margin-top: 30px; color: var(--danger);">
-        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
     </div>
 </nav>
 

@@ -18,7 +18,7 @@ const App = {
                 document.querySelector('.mobile-header').style.display = 'flex';
                 UI.renderNav(Store.state.materias);
                 UI.renderSelectMaterias(Store.state.materias);
-                
+                this.updateProfileUI(); 
                 // Si es Admin, mostrar el botón secreto
                 if (userData.role === 'admin') {
                     document.getElementById('nav-admin-btn').style.display = 'flex';
@@ -27,6 +27,7 @@ const App = {
                 // Si es Admin o Premium, inyectar las tareas de la Nube
                 if (userData.role === 'admin' || userData.role === 'premium') {
                     this.sincronizarTareasGlobales();
+                    console.log("Bienvenido REY");
                 }
 
                 this.renderDashboard();
@@ -266,6 +267,37 @@ const App = {
             </div>
         `;
     },
+    // --- LÓGICA DEL MENÚ DE PERFIL ---
+    toggleProfileMenu() {
+        document.getElementById('profile-dropdown').classList.toggle('show');
+    },
+
+    updateProfileUI() {
+        const user = Cloud.userData;
+        if (!user) return;
+
+        // Poner la primera letra del nombre en el botón circular
+        const initial = user.nombre ? user.nombre.charAt(0).toUpperCase() : '?';
+        document.getElementById('header-profile-btn').innerText = initial;
+
+        // Llenar datos en el menú desplegable
+        document.getElementById('prof-name').innerText = user.nombre;
+        document.getElementById('prof-email').innerText = user.email;
+
+        const badge = document.getElementById('prof-badge');
+        badge.className = 'profile-role-badge'; // reset clases
+        
+        if (user.role === 'admin') {
+            badge.innerText = '🛡️ ADMIN SUPREMO';
+            badge.classList.add('admin');
+        } else if (user.role === 'premium') {
+            badge.innerText = '👑 PREMIUM VIP';
+            badge.classList.add('premium');
+        } else {
+            badge.innerText = '🛑 PLAN GRATUITO';
+            badge.classList.add('free');
+        }
+    },
     eliminarMateriaActual() {
         const nombre = document.getElementById('subject-name-display').innerText;
         if (confirm(`¿Estás seguro de eliminar "${nombre}"? Se borrarán todas las tareas y notas de esta materia.`)) {
@@ -432,3 +464,13 @@ document.addEventListener('DOMContentLoaded', () => App.init());
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
 }
+// Cerrar menú de perfil si se hace clic fuera de él
+document.addEventListener('click', (e) => {
+    const btn = document.getElementById('header-profile-btn');
+    const dropdown = document.getElementById('profile-dropdown');
+    if (btn && dropdown) {
+        if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    }
+});
