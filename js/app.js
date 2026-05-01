@@ -6,7 +6,11 @@ const popSound = new Audio("data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMK
 popSound.volume = 0.5;
 
 const App = {
-    editModeId: null, vistaAnterior: 'dashboard', materiaFiltroCompletadas: false,
+    editModeId: null, 
+    vistaAnterior: 'dashboard', 
+    materiaFiltroCompletadas: false,
+    tempSubtareas: [],        // Memoria para formulario privado
+    adminTempSubtareas: [],   // Memoria para formulario Admin
 
     init() {
         Store.init();
@@ -19,15 +23,13 @@ const App = {
                 UI.renderNav(Store.state.materias);
                 UI.renderSelectMaterias(Store.state.materias);
                 this.updateProfileUI(); 
-                // Si es Admin, mostrar el botón secreto
+
                 if (userData.role === 'admin') {
                     document.getElementById('nav-admin-btn').style.display = 'flex';
                 }
 
-                // Si es Admin o Premium, inyectar las tareas de la Nube
                 if (userData.role === 'admin' || userData.role === 'premium') {
                     this.sincronizarTareasGlobales();
-                    console.log("Bienvenido REY");
                 }
 
                 this.renderDashboard();
@@ -47,13 +49,11 @@ const App = {
         let added = 0;
         
         globalTasks.forEach(gt => {
-            // Revisamos si la tarea global ya existe en el celular
             const exists = Store.state.actividades.find(a => a.globalId === gt.globalId);
             if (!exists) {
-                // Si no existe, la inyectamos a la memoria del celular
                 Store.state.actividades.push({
-                    id: Date.now() + Math.random(), // ID local
-                    globalId: gt.globalId, // Marca de agua de la nube
+                    id: Date.now() + Math.random(), 
+                    globalId: gt.globalId, 
                     titulo: gt.titulo,
                     materia: gt.materia,
                     tipo: gt.tipo,
@@ -62,12 +62,8 @@ const App = {
                     notas: gt.notas,
                     completada: false,
                     calificacion: null,
-                    subtareas:[],
-                    tempSubtareas:[],
-                    adminTempSubtareas: []
+                    subtareas: gt.subtareas || [] // Carga la checklist de la Nube si existe
                 });
-                
-                // Autocrear la materia en el celular del alumno si no la tiene
                 Store.addMateria(gt.materia);
                 added++;
             }
@@ -77,18 +73,16 @@ const App = {
             Store.save();
             UI.renderNav(Store.state.materias);
             this.refrescarVistaActual();
-            console.log(`☁️ ${added} Tareas nuevas inyectadas desde la Nube.`);
         }
     },
-    // --- LÓGICA DE FIREBASE Y USUARIOS (REDISEÑO) ---
-    
-    authMode: 'login', // Variable para saber en qué pestaña estamos
+
+    // --- LÓGICA DE FIREBASE Y USUARIOS ---
+    authMode: 'login',
 
     switchAuthMode(mode) {
         this.authMode = mode;
         const isLogin = mode === 'login';
         
-        // Cambiar estilos de las pestañas
         document.getElementById('tab-login').style.background = isLogin ? 'var(--card-bg)' : 'transparent';
         document.getElementById('tab-login').style.color = isLogin ? 'var(--text-main)' : 'var(--text-muted)';
         document.getElementById('tab-login').style.boxShadow = isLogin ? '0 2px 5px rgba(0,0,0,0.1)' : 'none';
@@ -97,10 +91,7 @@ const App = {
         document.getElementById('tab-register').style.color = !isLogin ? 'var(--text-main)' : 'var(--text-muted)';
         document.getElementById('tab-register').style.boxShadow = !isLogin ? '0 2px 5px rgba(0,0,0,0.1)' : 'none';
 
-        // Mostrar/Ocultar el campo de Nombre
         document.getElementById('auth-name-group').style.display = isLogin ? 'none' : 'block';
-        
-        // Cambiar textos
         document.getElementById('auth-subtitle').innerText = isLogin ? 'Ingresa a tu cuenta para continuar' : 'Únete al Top 1% de tu colegio';
         document.getElementById('auth-main-btn').innerText = isLogin ? 'Entrar al Sistema' : 'Crear mi Cuenta';
     },
@@ -112,7 +103,6 @@ const App = {
         
         if(!email || !pass) return alert("Por favor, llena los campos.");
 
-        // Efecto visual de carga
         const originalText = btn.innerText;
         btn.innerText = "Procesando...";
         btn.disabled = true;
@@ -136,10 +126,9 @@ const App = {
         btn.disabled = false;
     },
 
-    logout() {
-        if(confirm("¿Seguro que quieres cerrar sesión?")) Cloud.logout();
-    },
-    // --- PANEL ADMIN ---
+    logout() { if(confirm("¿Seguro que quieres cerrar sesión?")) Cloud.logout(); },
+
+    // --- PANEL ADMIN (USUARIOS Y NUBE) ---
     switchAdminTab(tab) {
         document.getElementById('tab-admin-users').classList.remove('active');
         document.getElementById('tab-admin-tasks').classList.remove('active');
@@ -157,7 +146,7 @@ const App = {
         const users = await Cloud.getAllUsers();
         
         list.innerHTML = users.map(u => `
-            <div class="card" style="border-left-color: ${u.role === 'premium' ? '#fbbf24' : (u.role==='admin'?'#ef4444':'#9ca3af')};">
+            <div class="card" style="border-left-color: ${u.role === 'premium' ? '#fbbf24' : (u.role==='admin'?'#ef4444':'#9ca3af')}; margin-bottom:10px;">
                 <div style="display:flex; justify-content:space-between;">
                     <strong style="font-size:1.1rem;">${u.nombre}</strong>
                     <span style="font-size:0.8rem; background:#eee; padding:3px 6px; border-radius:4px;">${u.role.toUpperCase()}</span>
@@ -165,7 +154,7 @@ const App = {
                 <p style="margin:5px 0; font-size:0.85rem; color:var(--text-muted);">${u.email}</p>
                 ${u.role === 'premium' ? `<p style="margin:0 0 10px 0; font-size:0.8rem; color:#10b981;">✅ Vence: ${u.premiumHasta}</p>` : ''}
                 
-                <div style="display:flex; gap:10px; margin-top:10px;">
+                <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
                     <button onclick="app.darPremium('${u.uid}', 7)" style="flex:1; background:#3b82f6; color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold;">+ 7 Días</button>
                     <button onclick="app.darPremium('${u.uid}', 30)" style="flex:1; background:#fbbf24; color:black; border:none; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold;">+ 30 Días</button>
                     <button onclick="app.resetDevice('${u.uid}')" style="width:100%; margin-top:5px; background:var(--danger); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold;"><i class="fas fa-mobile-alt"></i> Reset Celular</button>
@@ -175,7 +164,7 @@ const App = {
     },
 
     async darPremium(uid, dias) {
-        if (confirm(`¿Dar ${dias} días de Premium a este usuario? (Asegúrate de que ya te pagó)`)) {
+        if (confirm(`¿Dar ${dias} días de Premium a este usuario?`)) {
             const nuevaFecha = await Cloud.grantPremium(uid, dias);
             alert(`✅ Premium activado hasta: ${nuevaFecha}`);
             this.loadAdminUsers();
@@ -184,14 +173,14 @@ const App = {
     
     async resetDevice(uid) {
         if (confirm("¿Permitir que este usuario inicie sesión en un celular nuevo?")) {
-            // Importamos la función updateDoc y doc de Firebase para hacerlo desde aquí
             const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
             await updateDoc(doc(Cloud.db, "users", uid), { deviceId: "" });
-            alert("✅ Dispositivo reseteado. El alumno ya puede iniciar sesión en su nuevo celular.");
+            alert("✅ Dispositivo reseteado.");
             this.loadAdminUsers();
         }
     },
-// --- LÓGICA DE CHECKLIST PARA PANEL ADMIN ---
+
+    // --- CHECKLIST DEL ADMIN ---
     renderAdminSubtareas() {
         const container = document.getElementById('admin-subtasks-list');
         if (!container) return;
@@ -221,6 +210,7 @@ const App = {
         this.adminTempSubtareas.splice(index, 1);
         this.renderAdminSubtareas();
     },
+
     async subirTareaGlobal() {
         const data = {
             titulo: document.getElementById('admin-titulo').value,
@@ -235,20 +225,18 @@ const App = {
         
         await Cloud.addGlobalTask(data);
         alert("☁️ ¡Tarea Inyectada a todos los celulares Premium!");
+        
         document.getElementById('admin-titulo').value = '';
         document.getElementById('admin-notas').value = '';
+        this.adminTempSubtareas = [];
+        this.renderAdminSubtareas();
     },
 
-  
-
-   
-
-    
+    // --- PAYWALL Y PERFIL ---
     renderPremium() {
         const statusBox = document.getElementById('premium-status');
         const user = Cloud.userData;
 
-        // Limpiar estilos previos que puedan causar bugs
         statusBox.style.background = "transparent";
         statusBox.style.border = "none";
         statusBox.style.padding = "0";
@@ -267,7 +255,6 @@ const App = {
             return;
         }
 
-        // PÁGINA DE VENTAS ADAPTATIVA
         statusBox.innerHTML = `
             <div style="text-align:center; color: var(--text-main);">
                 <ul style="text-align:left; list-style:none; padding:15px; margin-bottom:25px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border-color);">
@@ -276,69 +263,49 @@ const App = {
                     <li style="margin-bottom:12px; font-weight:500;"><i class="fas fa-check-circle" style="color:#10b981; margin-right:8px;"></i> 🎨 Temas y colores Premium</li>
                     <li style="margin-bottom:12px; font-weight:500;"><i class="fas fa-check-circle" style="color:#10b981; margin-right:8px;"></i> 🛡️ Soporte prioritario</li>
                 </ul>
-
-                <!-- Plan Semanal Adaptativo -->
                 <div style="background:var(--card-bg); border:2px solid var(--border-color); padding:20px; border-radius:15px; margin-bottom:15px;">
                     <div style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">PLAN SEMANAL</div>
                     <div style="font-size:1.8rem; font-weight:800; color:var(--text-main);">3.50 S/</div>
                     <div style="color:var(--text-muted); font-size:0.8rem;">7 días de acceso VIP</div>
                 </div>
-
-                <!-- Plan Mensual (Siempre destaca en oscuro/oro) -->
                 <div style="background: linear-gradient(135deg, #1e2937, #000); padding:25px; border-radius:15px; border:2px solid #fbbf24; position:relative; color: white;">
                     <div style="position:absolute; top:-12px; right:15px; background:#fbbf24; color:black; font-size:0.7rem; font-weight:bold; padding:4px 10px; border-radius:20px;">MÁS POPULAR</div>
                     <div style="color:#fbbf24; font-size:0.8rem; font-weight:bold;">PLAN MENSUAL</div>
                     <div style="font-size:2.2rem; font-weight:800; color:white;">10.00 S/</div>
                     <div style="color:#aaa; font-size:0.8rem;">30 días (Ahorras 4 soles)</div>
                 </div>
-
                 <button onclick="window.open('https://wa.me/51tu_numero', '_blank')" style="width:100%; background:var(--primary); color:white; border:none; padding:20px; border-radius:12px; margin-top:25px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                     <i class="fab fa-whatsapp"></i> Activar con Migue
                 </button>
             </div>
         `;
     },
-    // --- LÓGICA DEL MENÚ DE PERFIL ---
-    toggleProfileMenu() {
-        document.getElementById('profile-dropdown').classList.toggle('show');
-    },
 
+    toggleProfileMenu() { document.getElementById('profile-dropdown').classList.toggle('show'); },
     updateProfileUI() {
         const user = Cloud.userData;
         if (!user) return;
-
-        // Poner la primera letra del nombre en el botón circular
-        const initial = user.nombre ? user.nombre.charAt(0).toUpperCase() : '?';
-        document.getElementById('header-profile-btn').innerText = initial;
-
-        // Llenar datos en el menú desplegable
+        document.getElementById('header-profile-btn').innerText = user.nombre ? user.nombre.charAt(0).toUpperCase() : '?';
         document.getElementById('prof-name').innerText = user.nombre;
         document.getElementById('prof-email').innerText = user.email;
-
         const badge = document.getElementById('prof-badge');
-        badge.className = 'profile-role-badge'; // reset clases
-        
-        if (user.role === 'admin') {
-            badge.innerText = '🛡️ ADMIN SUPREMO';
-            badge.classList.add('admin');
-        } else if (user.role === 'premium') {
-            badge.innerText = '👑 PREMIUM VIP';
-            badge.classList.add('premium');
-        } else {
-            badge.innerText = '🛑 PLAN GRATUITO';
-            badge.classList.add('free');
-        }
+        badge.className = 'profile-role-badge'; 
+        if (user.role === 'admin') { badge.innerText = '🛡️ ADMIN SUPREMO'; badge.classList.add('admin'); } 
+        else if (user.role === 'premium') { badge.innerText = '👑 PREMIUM VIP'; badge.classList.add('premium'); } 
+        else { badge.innerText = '🛑 PLAN GRATUITO'; badge.classList.add('free'); }
     },
+
     eliminarMateriaActual() {
         const nombre = document.getElementById('subject-name-display').innerText;
-        if (confirm(`¿Estás seguro de eliminar "${nombre}"? Se borrarán todas las tareas y notas de esta materia.`)) {
+        if (confirm(`¿Estás seguro de eliminar "${nombre}"? Se borrarán todas las tareas.`)) {
             Store.deleteMateria(nombre);
             UI.renderNav(Store.state.materias);
             UI.renderSelectMaterias(Store.state.materias);
             this.showView('dashboard');
         }
     },
-    // --- UI Y NAVEGACIÓN (Resto igual) ---
+
+    // --- NAVEGACIÓN Y VISTAS ---
     cambiarTema(themeName) { document.body.setAttribute('data-theme', themeName); localStorage.setItem('top1_theme', themeName); },
     toggleMenu(forceClose = false) { const s = document.getElementById('sidebar'); if (forceClose) s.classList.remove('open'); else s.classList.toggle('open'); },
     showView(viewId, subjectName = null) {
@@ -363,6 +330,7 @@ const App = {
         }
     },
 
+    // --- FORMULARIO PRIVADO Y CHECKLIST ---
     abrirFormulario(id = null) {
         this.editModeId = id;
         if (id) {
@@ -373,8 +341,7 @@ const App = {
             document.getElementById('fecha-input').value = act.fecha;
             document.getElementById('dificultad-select').value = act.dificultad; 
             document.getElementById('notas-input').value = act.notas;
-            // Clonamos los pasos que ya existen para editarlos en el formulario
-            this.tempSubtareas = act.subtareas ? [...act.subtareas] :[];
+            this.tempSubtareas = act.subtareas ? [...act.subtareas] : [];
         } else {
             document.getElementById('titulo').value = ''; 
             document.getElementById('fecha-input').value = ''; 
@@ -382,17 +349,15 @@ const App = {
             if (this.vistaAnterior !== 'dashboard' && this.vistaAnterior !== 'aspecto' && this.vistaAnterior !== 'premium' && this.vistaAnterior !== 'admin') {
                 document.getElementById('materia-select').value = this.vistaAnterior;
             }
-            // Empezamos con la lista de pasos vacía
-            this.tempSubtareas =[];
+            this.tempSubtareas = [];
         }
-        
-        this.renderFormSubtareas(); // Dibuja los pasos
+        this.renderFormSubtareas();
         this.showView('form');
     },
 
-
     renderFormSubtareas() {
         const container = document.getElementById('form-subtasks-list');
+        if (!container) return;
         if (this.tempSubtareas.length === 0) {
             container.innerHTML = '<p style="font-size:0.85rem; color:var(--text-muted); margin:0;">No hay pasos añadidos aún.</p>';
             return;
@@ -404,7 +369,6 @@ const App = {
             </div>
         `).join('');
     },
-
 
     agregarSubtareaForm() {
         const input = document.getElementById('form-subtask-input');
@@ -425,6 +389,7 @@ const App = {
         if (['dashboard', 'aspecto', 'premium', 'admin'].includes(this.vistaAnterior)) this.showView('dashboard');
         else this.showView('subject', this.vistaAnterior);
     },
+
     guardarActividad() {
         const titulo = document.getElementById('titulo').value; 
         const fecha = document.getElementById('fecha-input').value;
@@ -437,14 +402,14 @@ const App = {
             fecha, 
             dificultad: document.getElementById('dificultad-select').value, 
             notas: document.getElementById('notas-input').value,
-            subtareas: this.tempSubtareas // ¡Pasamos la lista al guardar!
+            subtareas: this.tempSubtareas
         };
-        
         Store.guardarActividad(data, this.editModeId);
         this.cerrarFormulario(); 
         this.refrescarVistaActual();
     },
 
+    // --- ACCIONES GENERALES ---
     agregarMateria() { const n = prompt("Nombre de la nueva materia:"); if (Store.addMateria(n)) { UI.renderNav(Store.state.materias); UI.renderSelectMaterias(Store.state.materias); } },
     realizarBusqueda() { this.renderDashboard(document.getElementById('global-search').value.toLowerCase()); },
     setFiltroMateria(ver) { this.materiaFiltroCompletadas = ver; UI.actualizarBotonesFiltro(ver); this.renderSubjectDetail(document.getElementById('subject-name-display').innerText); },
@@ -481,8 +446,10 @@ const App = {
     eliminarSubtarea(actId, subIndex) { Store.deleteSubtarea(actId, subIndex); this.refrescarVistaActual(); setTimeout(() => document.getElementById(`detalles-${actId}`).style.display = 'block', 50); },
     eliminarActividad(id) { if(confirm("¿Eliminar?")) { Store.deleteActividad(id); this.refrescarVistaActual(); } },
     toggleDetalles(id) { const el = document.getElementById(`detalles-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; },
+    
     renderDashboard(q = "") { UI.renderDashboard(Store.getDashboardActividades(q), Store.state.materias); },
     renderSubjectDetail(m) { UI.renderSubjectDetail(Store.getSubjectActividades(m, this.materiaFiltroCompletadas), Store.state.materias, Store.getPromedio(m)); },
+    
     refrescarVistaActual() {
         if (['dashboard', 'aspecto', 'premium', 'admin'].includes(this.vistaAnterior)) this.realizarBusqueda();
         else this.renderSubjectDetail(document.getElementById('subject-name-display').innerText);
@@ -495,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => App.init());
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
 }
-// Cerrar menú de perfil si se hace clic fuera de él
+
 document.addEventListener('click', (e) => {
     const btn = document.getElementById('header-profile-btn');
     const dropdown = document.getElementById('profile-dropdown');
