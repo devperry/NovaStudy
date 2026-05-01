@@ -211,19 +211,36 @@
         </div>
 
         <!-- PESTAÑA: SUBIR TAREAS GLOBALES -->
+
         <div id="admin-tasks-sec" style="display:none;">
             <div class="card" style="border: 2px solid var(--primary);">
                 <h3>Subir Tarea a todos los Premium</h3>
                 <input type="text" id="admin-titulo" class="big-control" placeholder="Ej: Examen Bimestral" style="margin-bottom:10px;">
                 <input type="text" id="admin-materia" class="big-control" placeholder="Nombre de la Materia (Exacto)" style="margin-bottom:10px;">
                 <select id="admin-tipo" class="big-control" style="margin-bottom:10px;">
-                    <option value="Tarea">Tarea</option><option value="Examen">Examen</option>
+                    <option value="Tarea">Tarea</option>
+                    <option value="Examen">Examen</option>
+                    <option value="Otro">Otro / Apunte</option>
                 </select>
                 <input type="date" id="admin-fecha" class="big-control" style="margin-bottom:10px;">
                 <select id="admin-dificultad" class="big-control" style="margin-bottom:10px;">
                     <option value="Fácil">Fácil</option><option value="Medio" selected>Medio</option><option value="Difícil">Difícil</option>
                 </select>
                 <textarea id="admin-notas" class="big-control" rows="3" placeholder="Detalles, temas a estudiar..." style="margin-bottom:15px;"></textarea>
+                 
+                 <!-- CHECKLIST DEL ADMIN CORREGIDA -->
+                 <label style="font-weight:bold; display:block; margin-bottom:8px;">Checklist Global</label>
+                 <div style="background: var(--bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+                    <div id="admin-subtasks-list" style="margin-bottom: 10px;">
+                        <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">No hay pasos añadidos aún.</p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="admin-subtask-input" placeholder="Ej: Leer página 20..." style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main);" onkeypress="if(event.key==='Enter') app.agregarAdminSubtarea()">
+                        <button onclick="app.agregarAdminSubtarea()" style="background: var(--border-color); color: var(--text-main); border: none; border-radius: 8px; padding: 0 18px; font-weight: bold; cursor: pointer; font-size: 1.2rem;">+</button>
+                    </div>
+                </div>
+
                 <button class="btn-massive" style="background:var(--primary); margin:0;" onclick="app.subirTareaGlobal()">☁️ Inyectar a Celulares</button>
             </div>
         </div>
@@ -260,6 +277,7 @@
         
         <label style="font-weight:bold; display:block; margin-bottom:8px;">Detalles y Apuntes</label>
         <textarea id="notas-input" class="big-control" rows="4" placeholder="Temas, metodología..."></textarea>
+        
         <label style="font-weight:bold; display:block; margin-bottom:8px;">Checklist / Pasos para completarla (Opcional)</label>
         <div style="background: var(--bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
             <div id="form-subtasks-list" style="margin-bottom: 10px;">

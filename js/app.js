@@ -63,7 +63,8 @@ const App = {
                     completada: false,
                     calificacion: null,
                     subtareas:[],
-                    tempSubtareas:[]
+                    tempSubtareas:[],
+                    adminTempSubtareas: []
                 });
                 
                 // Autocrear la materia en el celular del alumno si no la tiene
@@ -190,7 +191,36 @@ const App = {
             this.loadAdminUsers();
         }
     },
+// --- LÓGICA DE CHECKLIST PARA PANEL ADMIN ---
+    renderAdminSubtareas() {
+        const container = document.getElementById('admin-subtasks-list');
+        if (!container) return;
+        if (this.adminTempSubtareas.length === 0) {
+            container.innerHTML = '<p style="font-size:0.85rem; color:var(--text-muted); margin:0;">No hay pasos añadidos aún.</p>';
+            return;
+        }
+        container.innerHTML = this.adminTempSubtareas.map((sub, index) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); padding:10px; border-radius:6px; margin-bottom:5px; border:1px solid var(--border-color);">
+                <span style="font-size:0.9rem; color:var(--text-main);">${sub.texto}</span>
+                <button onclick="app.eliminarAdminSubtarea(${index})" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+        `).join('');
+    },
 
+    agregarAdminSubtarea() {
+        const input = document.getElementById('admin-subtask-input');
+        const texto = input.value.trim();
+        if(texto) {
+            this.adminTempSubtareas.push({ texto: texto, completada: false });
+            input.value = '';
+            this.renderAdminSubtareas();
+        }
+    },
+
+    eliminarAdminSubtarea(index) {
+        this.adminTempSubtareas.splice(index, 1);
+        this.renderAdminSubtareas();
+    },
     async subirTareaGlobal() {
         const data = {
             titulo: document.getElementById('admin-titulo').value,
@@ -198,7 +228,8 @@ const App = {
             tipo: document.getElementById('admin-tipo').value,
             fecha: document.getElementById('admin-fecha').value,
             dificultad: document.getElementById('admin-dificultad').value,
-            notas: document.getElementById('admin-notas').value
+            notas: document.getElementById('admin-notas').value,
+            subtareas: this.adminTempSubtareas 
         };
         if(!data.titulo || !data.materia || !data.fecha) return alert("Llena Título, Materia y Fecha.");
         
