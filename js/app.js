@@ -2,9 +2,12 @@ import { Store } from './store.js';
 import { UI } from './ui.js';
 import { Cloud } from './cloud.js';
 
-const popSound = new Audio("data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq/wTEwQAAP4AAAAAEwAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//NExDkAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq/wTEwQAAP4AAAAAEwAAAANIAAAAAExBTUUzLjEwMKqq");
-popSound.volume = 0.5;
-
+const popSound = new Audio("./assets/sfx/winTouchSfxPastel.mp3");
+popSound.volume = 0.7;
+const clapsSound = new Audio("./assets/sfx/multitudAplausos.mp3");
+clapsSound.volume = 0.6;
+const clickSound = new Audio("./assets/sfx/uiClick.mp3");
+clickSound.volume = 0.6;
 const App = {
     editModeId: null, 
     vistaAnterior: 'dashboard', 
@@ -68,7 +71,7 @@ const App = {
                 added++;
             }
         });
-
+       
         if (added > 0) {
             Store.save();
             UI.renderNav(Store.state.materias);
@@ -100,7 +103,8 @@ const App = {
         const email = document.getElementById('auth-email').value;
         const pass = document.getElementById('auth-password').value;
         const btn = document.getElementById('auth-main-btn');
-        
+        clickSound.currentTime = 0;
+        clickSound.play();
         if(!email || !pass) return alert("Por favor, llena los campos.");
 
         const originalText = btn.innerText;
@@ -303,6 +307,8 @@ const App = {
             UI.renderSelectMaterias(Store.state.materias);
             this.showView('dashboard');
         }
+        clickSound.currentTime = 0;
+        clickSound.play();
     },
 
     // --- NAVEGACIÓN Y VISTAS ---
@@ -332,6 +338,8 @@ const App = {
 
     // --- FORMULARIO PRIVADO Y CHECKLIST ---
     abrirFormulario(id = null) {
+        clickSound.currentTime = 0;
+        clickSound.play();
         this.editModeId = id;
         if (id) {
             const act = Store.getActividadById(id);
@@ -381,16 +389,22 @@ const App = {
     },
 
     eliminarSubtareaForm(index) {
+        clickSound.currentTime = 0;
+        clickSound.play();
         this.tempSubtareas.splice(index, 1);
         this.renderFormSubtareas();
     },
 
     cerrarFormulario() {
+        clickSound.currentTime = 0;
+        clickSound.play();
         if (['dashboard', 'aspecto', 'premium', 'admin'].includes(this.vistaAnterior)) this.showView('dashboard');
         else this.showView('subject', this.vistaAnterior);
     },
 
     guardarActividad() {
+        clickSound.currentTime = 0;
+        clickSound.play();
         const titulo = document.getElementById('titulo').value; 
         const fecha = document.getElementById('fecha-input').value;
         if (!titulo || !fecha) return alert("Falta título o fecha.");
@@ -421,6 +435,7 @@ const App = {
             Store.setCompletada(id, true);
             this.lanzarDopamina();
             if(act.tipo === 'Examen') {
+                clapsSound.play();
                 setTimeout(() => {
                     const nota = prompt(`¡Examen finalizado! ¿Nota? (0-20, AD, A)`);
                     if(nota) { Store.setCalificacion(id, nota); this.refrescarVistaActual(); }
@@ -431,7 +446,7 @@ const App = {
     },
 
     lanzarDopamina() {
-        try { popSound.play(); } catch(e) {}
+        try { popSound.currentTime= 0; popSound.play(); } catch(e) {console.log("No se pudo reproducir")}
         if (typeof confetti === 'function') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors:['#2563eb', '#10b981', '#f59e0b'] });
     },
 
