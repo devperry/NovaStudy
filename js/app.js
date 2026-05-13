@@ -5,9 +5,11 @@ import { Cloud } from './cloud.js';
 const popSound = new Audio("./assets/sfx/winTouchSfxPastel.mp3");
 popSound.volume = 0.7;
 const clapsSound = new Audio("./assets/sfx/multitudAplausos.mp3");
-clapsSound.volume = 0.6;
+clapsSound.volume = 0.4;
 const clickSound = new Audio("./assets/sfx/uiClick.mp3");
-clickSound.volume = 0.6;
+clickSound.volume = 0.5;
+const deleteSound = new Audio("./assets/sfx/eraseCutted.mp3");
+deleteSound.volume = 0.5;
 const App = {
     editModeId: null, 
     vistaAnterior: 'dashboard', 
@@ -379,6 +381,8 @@ const App = {
     },
 
     agregarSubtareaForm() {
+        clickSound.currentTime = 0;
+        clickSound.play();
         const input = document.getElementById('form-subtask-input');
         const texto = input.value.trim();
         if(texto) {
@@ -441,7 +445,7 @@ const App = {
                     if(nota) { Store.setCalificacion(id, nota); this.refrescarVistaActual(); }
                 }, 800);
             }
-        } else { Store.setCompletada(id, false); }
+        } else { Store.setCompletada(id, false); deleteSound.currentTime = 0; deleteSound.play(); }
         this.refrescarVistaActual();
     },
 

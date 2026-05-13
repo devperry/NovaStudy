@@ -48,7 +48,7 @@ export const UI = {
         const card = document.createElement('div');
         card.className = 'dev-card';
         card.id = 'dev-card';
-        card.innerHTML = `<div class="dev-avatar"><i class="fas fa-code"></i></div><div class="dev-info"><h4>SystemTopSchool</h4><p>Made with ❤️ by <b>MichaelModz 😎</b></p></div><button class="close-dev-card" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
+        card.innerHTML = `<div class="dev-avatar"><i class="fas fa-code"></i></div><div class="dev-info"><h4>SystemTopSchool</h4><p>Made with ❤️ by <b>MichaelModz (migue)😎</b></p></div><button class="close-dev-card" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
         document.body.appendChild(card);
         setTimeout(() => { const el = document.getElementById('dev-card'); if(el) { el.style.opacity = '0'; el.style.transition = '1s'; setTimeout(()=>el.remove(), 1000); } }, 8000);
     },

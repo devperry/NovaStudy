@@ -29,6 +29,25 @@
     --text-main: #e2e8f0; --text-muted: #94a3b8; --card-bg: #1e293b;
     --border-color: #334155; --danger: #f43f5e; --danger-bg: #4c0519;
 }
+[data-theme="luxury"] {
+    --primary: #d4af37;        
+    --bg: #050505;             
+    --sidebar: #0f0f0f;        
+    --text-main: #f3f4f6;      
+    --text-muted: #a1a1aa;    
+    --card-bg: #141414;       
+    --border-color: #262626;   
+    --danger: #ef4444; 
+    --danger-bg: #2d0a0a;
+}
+
+[data-theme="forest"] {
+    --primary: #10b981; --bg: #022c22; --sidebar: #064e3b;
+    --text-main: #ecfdf5; --text-muted: #6ee7b7; --card-bg: #065f46;
+    --border-color: #064e3b; --danger: #fb7185; --danger-bg: #4c0519;
+}
+
+
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
