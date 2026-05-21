@@ -51,6 +51,12 @@
         <button class="profile-menu-btn" onclick="app.showView('aspecto'); app.toggleProfileMenu();">
             <i class="fas fa-palette" style="color:#8b5cf6;"></i> Personalizar Aspecto
         </button>
+         <button class="profile-menu-btn" onclick="app.importarDatos()">
+            <i class="fas fa-file-import" style="color:#10b981;"></i> Importar Datos
+        </button>
+        <button class="profile-menu-btn" onclick="app.exportarDatos()">
+            <i class="fas fa-file-export" style="color:#3b82f6;"></i> Exportar Backup
+        </button>
 
         <button class="profile-menu-btn logout" onclick="app.logout()">
             <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
@@ -222,36 +228,35 @@
 
         <!-- PESTAÑA: SUBIR TAREAS GLOBALES -->
 
+<!-- PESTAÑA: SUBIR TAREAS GLOBALES -->
         <div id="admin-tasks-sec" style="display:none;">
-            <div class="card" style="border: 2px solid var(--primary);">
-                <h3>Subir Tarea a todos los Premium</h3>
+            <!-- OPCIÓN 1: MANUAL -->
+            <div class="card" style="border: 2px solid var(--primary); margin-bottom: 20px;">
+                <h3>Subir Tarea Rápida a Premium</h3>
                 <input type="text" id="admin-titulo" class="big-control" placeholder="Ej: Examen Bimestral" style="margin-bottom:10px;">
-                <input type="text" id="admin-materia" class="big-control" placeholder="Nombre de la Materia (Exacto)" style="margin-bottom:10px;">
-                <select id="admin-tipo" class="big-control" style="margin-bottom:10px;">
-                    <option value="Tarea">Tarea</option>
-                    <option value="Examen">Examen</option>
-                    <option value="Otro">Otro / Apunte</option>
-                </select>
+                <input type="text" id="admin-materia" class="big-control" placeholder="Nombre de la Materia" style="margin-bottom:10px;">
+                <select id="admin-tipo" class="big-control" style="margin-bottom:10px;"><option value="Tarea">Tarea</option><option value="Examen">Examen</option><option value="Otro">Otro</option></select>
                 <input type="date" id="admin-fecha" class="big-control" style="margin-bottom:10px;">
-                <select id="admin-dificultad" class="big-control" style="margin-bottom:10px;">
-                    <option value="Fácil">Fácil</option><option value="Medio" selected>Medio</option><option value="Difícil">Difícil</option>
-                </select>
-                <textarea id="admin-notas" class="big-control" rows="3" placeholder="Detalles, temas a estudiar..." style="margin-bottom:15px;"></textarea>
+                <select id="admin-dificultad" class="big-control" style="margin-bottom:10px;"><option value="Fácil">Fácil</option><option value="Medio" selected>Medio</option><option value="Difícil">Difícil</option></select>
+                <textarea id="admin-notas" class="big-control" rows="3" placeholder="Detalles..." style="margin-bottom:15px;"></textarea>
                  
-                 <!-- CHECKLIST DEL ADMIN CORREGIDA -->
                  <label style="font-weight:bold; display:block; margin-bottom:8px;">Checklist Global</label>
                  <div style="background: var(--bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
-                    <div id="admin-subtasks-list" style="margin-bottom: 10px;">
-                        <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">No hay pasos añadidos aún.</p>
-                    </div>
-                    
+                    <div id="admin-subtasks-list" style="margin-bottom: 10px;"></div>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="admin-subtask-input" placeholder="Ej: Leer página 20..." style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main);" onkeypress="if(event.key==='Enter') app.agregarAdminSubtarea()">
                         <button onclick="app.agregarAdminSubtarea()" style="background: var(--border-color); color: var(--text-main); border: none; border-radius: 8px; padding: 0 18px; font-weight: bold; cursor: pointer; font-size: 1.2rem;">+</button>
                     </div>
                 </div>
+                <button class="btn-massive" style="background:var(--primary); margin:0;" onclick="app.subirTareaGlobal()">☁️ Inyectar Tarea</button>
+            </div>
 
-                <button class="btn-massive" style="background:var(--primary); margin:0;" onclick="app.subirTareaGlobal()">☁️ Inyectar a Celulares</button>
+            <!-- OPCIÓN 2: MASIVA -->
+            <div class="card" style="border: 2px solid #10b981; text-align: center;">
+                <h3 style="color:#10b981; margin-top:0;"><i class="fas fa-file-upload"></i> Subida Masiva (JSON)</h3>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:15px;">Sube el backup de tu perfil para inyectar todas tus tareas a la vez.</p>
+                <input type="file" id="admin-master-file" class="big-control" accept=".json" style="padding:10px;">
+                <button class="btn-massive" style="background:#10b981; margin:0;" onclick="app.subirMasterJSON()">☁️ Sincronizar Archivo</button>
             </div>
         </div>
     </div>
@@ -300,8 +305,49 @@
         </div>
         <button id="btn-save-form" class="btn-massive" onclick="app.guardarActividad()">Guardar Actividad</button>
     </div>
-
+    <!-- NUEVO: EDITOR JSON REMOTO DEL ADMIN -->
+    <div id="admin-json-editor" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; padding:20px; align-items:center; justify-content:center;">
+        <div style="background:var(--card-bg); width:100%; max-width:600px; border-radius:15px; padding:20px; display:flex; flex-direction:column; height:85vh; border: 1px solid var(--border-color);">
+            <h2 id="json-editor-title" style="margin-top:0; color:var(--primary);"><i class="fas fa-user-edit"></i> Editando a: ---</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:10px;">Pega tu propio JSON aquí o modifica el del alumno. Al guardar, se reemplazará su memoria local (Las tareas Premium no se verán afectadas).</p>
+            
+            <textarea id="json-editor-textarea" style="flex:1; width:100%; background:#1e293b; color:#a7f3d0; font-family:monospace; font-size: 0.85rem; padding:15px; border-radius:8px; border:none; resize:none;"></textarea>
+            
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="document.getElementById('admin-json-editor').style.display='none'" style="flex:1; padding:12px; border-radius:8px; border:none; background:var(--border-color); color:var(--text-main); font-weight:bold; cursor:pointer;">Cancelar</button>
+                <button onclick="app.guardarEditorRemoto()" style="flex:2; padding:12px; border-radius:8px; border:none; background:var(--primary); color:white; font-weight:bold; cursor:pointer;"><i class="fas fa-cloud-upload-alt"></i> Forzar Cambios</button>
+            </div>
+        </div>
+    </div>
 </main>
+<!-- OVERLAY DE MODALES -->
+<div id="modal-overlay" class="modal-overlay">
+    <!-- Modal Exportar -->
+    <div id="modal-export" class="modal-card">
+        <h2 style="margin-top:0;"><i class="fas fa-file-export" style="color:var(--primary);"></i> Exportar Backup</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem;">Tus tareas PREMIUM no se incluirán en este archivo por seguridad.</p>
+        <label style="font-weight:bold; font-size:0.85rem; color:var(--text-muted);">Nombre del archivo</label>
+        <input type="text" id="export-filename" class="big-control" value="TopSchool_Backup" style="margin-top:5px;">
+        <div style="display:flex; gap:10px;">
+            <button class="btn-massive" style="background:var(--bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="app.closeModal()">Cancelar</button>
+            <button class="btn-massive" onclick="app.confirmarExportar()" style="box-shadow: 0 4px 10px rgba(37,99,235,0.3);">Descargar</button>
+        </div>
+    </div>
+    <!-- Modal Importar -->
+    <div id="modal-import" class="modal-card">
+        <h2 style="margin-top:0;"><i class="fas fa-file-import" style="color:#10b981;"></i> Importar Datos</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem;">Selecciona tu archivo JSON de respaldo.</p>
+        <input type="file" id="import-file" class="big-control" accept=".json" style="padding:10px;">
+        <label class="checkbox-label">
+            <input type="checkbox" id="import-overwrite">
+            <div><b style="color:var(--danger);">¡Peligro!</b> Borrar mis datos actuales y sobrescribir todo.</div>
+        </label>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-massive" style="background:var(--bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="app.closeModal()">Cancelar</button>
+            <button class="btn-massive" onclick="app.confirmarImportar()" style="background:#10b981; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">Importar</button>
+        </div>
+    </div>
+</div>
 
 <button id="fab-add" class="fab" onclick="app.abrirFormulario()">
     <i class="fas fa-plus"></i>

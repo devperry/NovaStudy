@@ -37,16 +37,17 @@
     --text-muted: #a1a1aa;    
     --card-bg: #141414;       
     --border-color: #262626;   
-    --danger: #ef4444; 
+    --danger: #EF4444; 
     --danger-bg: #2d0a0a;
 }
 
 [data-theme="forest"] {
     --primary: #10b981; --bg: #022c22; --sidebar: #064e3b;
     --text-main: #ecfdf5; --text-muted: #6ee7b7; --card-bg: #065f46;
-    --border-color: #064e3b; --danger: #fb7185; --danger-bg: #4c0519;
+    --border-color: #064e3b; --danger: #FB7185; --danger-bg: #4c0519;
 }
 
+/*Futura funcion De themas CUSTOM*/
 
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -74,6 +75,7 @@ main { flex: 1; overflow-y: auto; padding: 80px 20px 100px 20px; }
 /* FAB */
 .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 90; transition: transform 0.2s; }
 .fab:active { transform: scale(0.95); }
+
 
 /* FORMULARIO */
 .form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
@@ -290,3 +292,25 @@ main { flex: 1; overflow-y: auto; padding: 80px 20px 100px 20px; }
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+/* --- VENTANAS MODALES (IMPORTAR/EXPORTAR) --- */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+    z-index: 2000; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: 0.3s ease;
+}
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal-card {
+    background: var(--card-bg); width: 90%; max-width: 400px;
+    padding: 25px; border-radius: 16px; border: 1px solid var(--border-color);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    transform: translateY(20px); transition: 0.3s ease; display: none;
+}
+.modal-overlay.show .modal-card { transform: translateY(0); }
+.checkbox-label {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 25px; color: var(--text-muted);
+    font-size: 0.9rem; cursor: pointer;
+    background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);
+}
+.checkbox-label input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--danger); cursor: pointer; }

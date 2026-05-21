@@ -16,29 +16,15 @@ export const Store = {
     addMateria(nombre) {
         if (!nombre || this.state.materias.find(m => m.nombre === nombre)) return false;
         const color = PALETTE[this.state.materias.length % PALETTE.length];
-        this.state.materias.push({ nombre, color });
-        this.save();
-        return true;
+        this.state.materias.push({ nombre, color }); this.save(); return true;
     },
 
-    // --- EL CEREBRO DE GUARDADO ---
     guardarActividad(actividadData, editId = null) {
         if (editId) {
             const index = this.state.actividades.findIndex(a => a.id === editId);
-            if (index !== -1) {
-                // Al editar, actualizamos todo incluyendo la nueva checklist del formulario
-                this.state.actividades[index] = { ...this.state.actividades[index], ...actividadData };
-            }
+            if (index !== -1) this.state.actividades[index] = { ...this.state.actividades[index], ...actividadData };
         } else {
-            // Al crear nueva
-            this.state.actividades.push({ 
-                id: Date.now(), 
-                ...actividadData, 
-                completada: false, 
-                calificacion: null, 
-                // Si el formulario no envió subtareas, ponemos un array vacío
-                subtareas: actividadData.subtareas || [] 
-            });
+            this.state.actividades.push({ id: Date.now(), ...actividadData, completada: false, calificacion: null, subtareas: actividadData.subtareas || [] });
         }
         this.save();
     },
@@ -47,6 +33,35 @@ export const Store = {
         this.state.materias = this.state.materias.filter(m => m.nombre !== nombre);
         this.state.actividades = this.state.actividades.filter(a => a.materia !== nombre);
         this.save();
+    },
+
+    // --- IMPORT / EXPORT (ARCHIVOS JSON) ---
+    getExportJSON() {
+        const cleanActs = this.state.actividades.filter(a => !a.globalId); // Filtra Premium
+        const dataObj = { materias: this.state.materias, actividades: cleanActs, theme: localStorage.getItem('top1_theme') || 'default' };
+        return JSON.stringify(dataObj, null, 2);
+    },
+
+    importFromJSON(jsonString, overwrite = false) {
+        try {
+            const data = JSON.parse(jsonString);
+            if (!data.materias || !data.actividades) return false;
+
+            if (overwrite) {
+                const premiumTasks = this.state.actividades.filter(a => a.globalId);
+                this.state.materias = data.materias;
+                this.state.actividades = [...data.actividades, ...premiumTasks];
+            } else {
+                data.materias.forEach(newMat => {
+                    if (!this.state.materias.find(m => m.nombre === newMat.nombre)) this.state.materias.push(newMat);
+                });
+                data.actividades.forEach(newAct => {
+                    if (!this.state.actividades.find(a => a.id === newAct.id)) this.state.actividades.push(newAct);
+                });
+            }
+            if (data.theme) localStorage.setItem('top1_theme', data.theme);
+            this.save(); return true;
+        } catch(e) { return false; }
     },
 
     getActividadById(id) { return this.state.actividades.find(a => a.id === id); },
@@ -64,8 +79,7 @@ export const Store = {
             else if (!isNaN(parseFloat(val))) suma += parseFloat(val); else return;
             count++;
         });
-        if(count === 0) return null;
-        return (suma / count).toFixed(1);
+        if(count === 0) return null; return (suma / count).toFixed(1);
     },
 
     addSubtarea(actId, texto) { const act = this.getActividadById(actId); if (act && texto) { act.subtareas.push({ texto, completada: false }); this.save(); } },

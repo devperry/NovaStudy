@@ -5,11 +5,11 @@ import { Cloud } from './cloud.js';
 const popSound = new Audio("./assets/sfx/winTouchSfxPastel.mp3");
 popSound.volume = 0.7;
 const clapsSound = new Audio("./assets/sfx/multitudAplausos.mp3");
-clapsSound.volume = 0.4;
+clapsSound.volume = 0.3;
 const clickSound = new Audio("./assets/sfx/uiClick.mp3");
 clickSound.volume = 0.5;
 const deleteSound = new Audio("./assets/sfx/eraseCutted.mp3");
-deleteSound.volume = 0.5;
+deleteSound.volume = 1;
 const App = {
     editModeId: null, 
     vistaAnterior: 'dashboard', 
@@ -21,7 +21,7 @@ const App = {
         Store.init();
         const savedTheme = localStorage.getItem('top1_theme') || 'default';
         this.cambiarTema(savedTheme);
-
+        //Funcion Para iniciar el auth
         Cloud.initAuth(
             (userData) => {
                 document.querySelector('.mobile-header').style.display = 'flex';
@@ -472,6 +472,65 @@ const App = {
     refrescarVistaActual() {
         if (['dashboard', 'aspecto', 'premium', 'admin'].includes(this.vistaAnterior)) this.realizarBusqueda();
         else this.renderSubjectDetail(document.getElementById('subject-name-display').innerText);
+    },
+    // --- SISTEMA DE ARCHIVOS (MODALES) ---
+    openModal(modalId) {
+        document.getElementById('modal-overlay').classList.add('show');
+        document.querySelectorAll('.modal-card').forEach(c => c.style.display = 'none');
+        document.getElementById(modalId).style.display = 'block';
+        this.toggleProfileMenu(true);
+    },
+
+    closeModal() { document.getElementById('modal-overlay').classList.remove('show'); },
+    exportarDatos() { this.openModal('modal-export'); },
+    importarDatos() { this.openModal('modal-import'); },
+
+    confirmarExportar() {
+        const filename = document.getElementById('export-filename').value.trim() || 'TopSchool_Backup';
+        const json = Store.getExportJSON();
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${filename}.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        this.closeModal();
+    },
+
+    confirmarImportar() {
+        const fileInput = document.getElementById('import-file');
+        const overwrite = document.getElementById('import-overwrite').checked;
+        if (!fileInput.files.length) return alert("Selecciona un archivo .json primero.");
+        
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (Store.importFromJSON(e.target.result, overwrite)) {
+                this.closeModal();
+                this.cambiarTema(localStorage.getItem('top1_theme') || 'default');
+                UI.renderNav(Store.state.materias); UI.renderSelectMaterias(Store.state.materias);
+                this.refrescarVistaActual();
+                alert("✅ ¡Datos importados correctamente!");
+            } else { alert("❌ Error: Archivo corrupto o no compatible."); }
+        };
+        reader.readAsText(file);
+    },
+
+    async subirMasterJSON() {
+        const fileInput = document.getElementById('admin-master-file');
+        if (!fileInput.files.length) return alert("Selecciona el archivo JSON primero.");
+        
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (!data.actividades) throw new Error("JSON Inválido");
+                await Cloud.uploadMasterTasks(data.actividades);
+                alert("☁️ ¡ARCHIVO MAESTRO SUBIDO! Todos los usuarios Premium recibirán estas tareas.");
+                fileInput.value = '';
+            } catch (err) { alert("❌ Error procesando el JSON."); }
+        };
+        reader.readAsText(file);
     }
 };
 

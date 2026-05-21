@@ -52,7 +52,7 @@ export const UI = {
         document.body.appendChild(card);
         setTimeout(() => { const el = document.getElementById('dev-card'); if(el) { el.style.opacity = '0'; el.style.transition = '1s'; setTimeout(()=>el.remove(), 1000); } }, 8000);
     },
-
+    //funcion para crear las materias
     createCard(a, materiasStore) {
         const mat = materiasStore.find(m => m.nombre === a.materia);
         const color = mat ? mat.color : '#ccc';
