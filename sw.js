@@ -3,6 +3,7 @@ const CACHE_NAME = 'top1-v3'; // Cada vez que hagas un cambio grande, súbele el
 const ASSETS =[
   './',
   './index.html',
+  './manifest.json',
   './css/styles.css',
   './js/app.js',
   './js/store.js',
