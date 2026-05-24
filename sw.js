@@ -1,4 +1,4 @@
-const CACHE_NAME = 'top1-v4'; // Cada vez que hagas un cambio grande, súbele el número (v4, v5...)
+const CACHE_NAME = 'top1-v5'; // Cada vez que hagas un cambio grande, súbele el número (v4, v5...)
 
 const ASSETS =[
   './',
