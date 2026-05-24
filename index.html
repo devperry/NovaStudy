@@ -43,6 +43,9 @@
             <p id="prof-email" class="profile-email">---</p>
             <div id="prof-badge" class="profile-role-badge free">GRATIS</div>
         </div>
+            <button id="profile-install-btn" class="profile-menu-btn" style="display:none; color:#10b981; font-weight:bold;">
+            <i class="fas fa-download"></i> Instalar App en el Celular
+        </button>
 
         <button class="profile-menu-btn" onclick="app.showView('premium'); app.toggleProfileMenu();">
             <i class="fas fa-crown" style="color:#fbbf24;"></i> Mi Suscripción VIP
@@ -105,7 +108,16 @@
                 
                 <h1 style="margin: 0 0 10px 0; font-size: 2rem; color: var(--text-main);">TopSchool</h1>
                 <p id="auth-subtitle" style="color: var(--text-muted); margin-bottom: 30px;">Ingresa a tu cuenta para continuar</p>
+                    <div id="pwa-install-zone" class="install-btn-container">
+                    <button id="pwa-install-btn" class="install-btn">
+                        <i class="fas fa-download"></i> Instalar App (Sin Internet)
+                    </button>
+                </div>
 
+                <div id="ios-install-zone" class="ios-instructions">
+                    <b style="color:var(--text-main);"><i class="fab fa-apple"></i> ¿Estás en iPhone?</b>
+                    <p style="color:var(--text-muted); font-size:0.85rem; margin:5px 0 0 0;">Para usar la app sin internet: Toca el icono de <b>Compartir <i class="fas fa-external-link-alt"></i></b> abajo y elige <b>"Agregar a Inicio <i class="fas fa-plus-square"></i>"</b>.</p>
+                </div>
                 <div class="card" style="text-align: left; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid var(--border-color);">
                     
                     <!-- Pestañas (Tabs) -->

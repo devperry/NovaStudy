@@ -508,7 +508,7 @@ const App = {
                 this.closeModal();
                 this.cambiarTema(localStorage.getItem('top1_theme') || 'default');
                 UI.renderNav(Store.state.materias); UI.renderSelectMaterias(Store.state.materias);
-                this.refrescarVistaActual();
+                this.showView('dashboard');
                 alert("✅ ¡Datos importados correctamente!");
             } else { alert("❌ Error: Archivo corrupto o no compatible."); }
         };
@@ -540,6 +540,72 @@ document.addEventListener('DOMContentLoaded', () => App.init());
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
 }
+// ==========================================
+// --- SISTEMA DE INSTALACIÓN (PWA) 📲 ---
+// ==========================================
+let deferredPrompt;
+
+// 1. Detectar si el usuario está en un dispositivo Apple (iOS)
+const isIOS = () => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(userAgent);
+};
+
+// 2. Comprobar si la app YA ESTÁ instalada o si la están abriendo desde la pantalla de inicio
+const isStandalone = () => {
+    return (window.matchMedia('(display-mode: standalone)').matches) || (window.navigator.standalone) || document.referrer.includes('android-app://');
+};
+
+// 3. Atrapar el evento mágico de Chrome/Android
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevenir que Google muestre su propio cartel molesto en la parte inferior
+    e.preventDefault();
+    // Guardar el evento para usarlo cuando el usuario presione nuestro botón
+    deferredPrompt = e;
+    
+    // Si la app NO está instalada, mostramos nuestro botón hermoso
+    if (!isStandalone()) {
+        const installZone = document.getElementById('pwa-install-zone');
+        const profileBtn = document.getElementById('profile-install-btn');
+        
+        if(installZone) installZone.style.display = 'block';
+        if(profileBtn) profileBtn.style.display = 'flex';
+    }
+});
+
+// 4. Lógica de los botones "Instalar"
+const installApp = async () => {
+    if (deferredPrompt) {
+        // Mostrar el aviso nativo de instalación
+        deferredPrompt.prompt();
+        // Esperar a ver si el usuario aceptó o canceló
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            console.log('✅ El usuario aceptó la instalación');
+            // Ocultar los botones porque ya la instaló
+            document.getElementById('pwa-install-zone').style.display = 'none';
+            document.getElementById('profile-install-btn').style.display = 'none';
+        }
+        // Limpiamos el evento
+        deferredPrompt = null;
+    }
+};
+
+// Vincular los clics de los botones a la función (si los botones existen)
+document.addEventListener('DOMContentLoaded', () => {
+    const mainBtn = document.getElementById('pwa-install-btn');
+    const profBtn = document.getElementById('profile-install-btn');
+    
+    if(mainBtn) mainBtn.addEventListener('click', installApp);
+    if(profBtn) profBtn.addEventListener('click', installApp);
+
+    // Si es un iPhone y no está instalada, mostrar las instrucciones de Apple
+    if (isIOS() && !isStandalone()) {
+        const iosZone = document.getElementById('ios-install-zone');
+        if(iosZone) iosZone.style.display = 'block';
+    }
+});
+
 
 document.addEventListener('click', (e) => {
     const btn = document.getElementById('header-profile-btn');
