@@ -546,10 +546,11 @@ if ('serviceWorker' in navigator) {
 let deferredPrompt;
 
 // 1. Detectar si el usuario está en un dispositivo Apple (iOS)
-const isIOS = () => {
+const isIOS = () => true;
+/*const isIOS = () => {
     const userAgent = window.navigator.userAgent.toLowerCase();
     return /iphone|ipad|ipod/.test(userAgent);
-};
+};*/
 
 // 2. Comprobar si la app YA ESTÁ instalada o si la están abriendo desde la pantalla de inicio
 const isStandalone = () => {
