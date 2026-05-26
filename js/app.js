@@ -48,23 +48,21 @@ const App = {
         );
     },
 
-  
-  // --- SINCRONIZACIÓN MÁGICA (BLINDADA ANTI-DUPLICADOS) ---
+// --- SINCRONIZACIÓN MÁGICA (SOBRESCRITURA INTELIGENTE) ---
     async sincronizarTareasGlobales() {
         const globalTasks = await Cloud.getGlobalTasks();
         let added = 0;
         let updated = false;
         
         globalTasks.forEach(gt => {
-            // FILTRO INTELIGENTE DE 3 CAPAS
+            // Buscamos si la tarea ya existe en el celular
             const exists = Store.state.actividades.find(a => 
                 a.globalId === gt.globalId || 
-                a.id === gt.id || 
                 (a.titulo.trim().toLowerCase() === gt.titulo.trim().toLowerCase() && a.materia === gt.materia)
             );
 
             if (!exists) {
-                // Si de verdad no existe, la inyectamos a la memoria del celular
+                // 1. SI NO EXISTE: Inyectamos como tarea totalmente nueva
                 Store.state.actividades.push({
                     id: Date.now() + Math.random(), 
                     globalId: gt.globalId, 
@@ -80,21 +78,38 @@ const App = {
                 });
                 Store.addMateria(gt.materia);
                 added++;
-            } else if (!exists.globalId) {
-                // Si la tarea ya existía localmente pero no tenía la marca de agua de la nube
-                // (Ej: Tú la creaste o un alumno la anotó a mano), le ponemos la marca silenciosamente
+            } else {
+                // 2. SI YA EXISTE: Actualizamos la información (Modo Edición del Admin)
+                
+                // Fusionamos la checklist: mantenemos los checks que el alumno ya había marcado
+                const nuevasSubtareas = (gt.subtareas || []).map(nuevaSub => {
+                    const viejaSub = (exists.subtareas || []).find(s => s.texto === nuevaSub.texto);
+                    return {
+                        texto: nuevaSub.texto,
+                        completada: viejaSub ? viejaSub.completada : false // Recuerda si ya lo tachó
+                    };
+                });
+
+                // Sobrescribimos los datos editables del profesor/admin
                 exists.globalId = gt.globalId;
+                exists.titulo = gt.titulo;
+                exists.materia = gt.materia;
+                exists.tipo = gt.tipo;
+                exists.fecha = gt.fecha;
+                exists.dificultad = gt.dificultad;
+                exists.notas = gt.notas;
+                exists.subtareas = nuevasSubtareas;
+                
+                // NOTA: NO tocamos exists.completada ni exists.calificacion para no borrarle el progreso al alumno
                 updated = true;
             }
         });
        
         if (added > 0 || updated) {
             Store.save();
-            if (added > 0) {
-                UI.renderNav(Store.state.materias);
-                this.refrescarVistaActual();
-                console.log(`☁️ ${added} Tareas nuevas inyectadas desde la Nube.`);
-            }
+            UI.renderNav(Store.state.materias);
+            this.refrescarVistaActual();
+            console.log(`☁️ Sincronización completa: ${added} Tareas nuevas, y se actualizaron las existentes.`);
         }
     },
 
