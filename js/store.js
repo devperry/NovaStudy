@@ -28,6 +28,17 @@ export const Store = {
         }
         this.save();
     },
+    
+    purgarTareasPremium() {
+        const cantidadAntes = this.state.actividades.length;
+        // Filtramos para quedarnos ÚNICAMENTE con las tareas creadas manualmente (sin globalId)
+        this.state.actividades = this.state.actividades.filter(a => !a.globalId);
+        
+        // Si borramos algo, guardamos los cambios en el celular
+        if (cantidadAntes !== this.state.actividades.length) {
+            this.save();
+        }
+    },
 
     deleteMateria(nombre) {
         this.state.materias = this.state.materias.filter(m => m.nombre !== nombre);

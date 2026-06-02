@@ -35,6 +35,9 @@ const App = {
 
                 if (userData.role === 'admin' || userData.role === 'premium') {
                     this.sincronizarTareasGlobales();
+                }else {
+                    // NUEVO: Si es Gratis, ejecutamos la Purga VIP para borrar tareas de la nube
+                    Store.purgarTareasPremium();
                 }
 
                 this.renderDashboard();
@@ -112,6 +115,7 @@ const App = {
             console.log(`☁️ Sincronización completa: ${added} Tareas nuevas, y se actualizaron las existentes.`);
         }
     },
+    
 
     // --- LÓGICA DE FIREBASE Y USUARIOS ---
     authMode: 'login',
@@ -217,7 +221,7 @@ const App = {
             this.loadAdminUsers();
         }
     },
-
+    
     // --- CHECKLIST DEL ADMIN ---
     renderAdminSubtareas() {
         const container = document.getElementById('admin-subtasks-list');

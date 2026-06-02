@@ -23,7 +23,9 @@ export const Cloud = {
         if (!deviceId) { deviceId = Math.random().toString(36).substring(2, 15); localStorage.setItem('top1_device_id', deviceId); }
         return deviceId;
     },
-
+    
+    
+    
     initAuth(onLogin, onLogout) {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
