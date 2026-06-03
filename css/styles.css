@@ -221,7 +221,7 @@ main { flex: 1; overflow-y: auto; padding: 80px 20px 100px 20px; }
     box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     width: 250px;
     padding: 15px;
-    display: none; /* Oculto por defecto */
+    display: none; 
     flex-direction: column;
     z-index: 1000;
     animation: fadeIn 0.2s ease-out;
@@ -318,7 +318,7 @@ main { flex: 1; overflow-y: auto; padding: 80px 20px 100px 20px; }
 /* --- BOTÓN DE INSTALACIÓN PWA --- */
 .install-btn-container {
     margin-bottom: 25px;
-    display: none; /*Oculto por defecto hasta que el navegador avise que se puede instalar */
+    display: none; 
 }
 
 .install-btn {
@@ -353,5 +353,5 @@ main { flex: 1; overflow-y: auto; padding: 80px 20px 100px 20px; }
     border-radius: 12px;
     margin-bottom: 25px;
     text-align: left;
-    display: none; /* Oculto por defecto */
+    display: none; 
 }

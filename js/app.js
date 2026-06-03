@@ -14,8 +14,8 @@ const App = {
     editModeId: null, 
     vistaAnterior: 'dashboard', 
     materiaFiltroCompletadas: false,
-    tempSubtareas: [],        // Memoria para formulario privado
-    adminTempSubtareas: [],   // Memoria para formulario Admin
+    tempSubtareas: [],        
+    adminTempSubtareas: [],  
 
     init() {
         Store.init();
@@ -36,7 +36,7 @@ const App = {
                 if (userData.role === 'admin' || userData.role === 'premium') {
                     this.sincronizarTareasGlobales();
                 }else {
-                    // NUEVO: Si es Gratis, ejecutamos la Purga VIP para borrar tareas de la nube
+
                     Store.purgarTareasPremium();
                 }
 
@@ -51,7 +51,7 @@ const App = {
         );
     },
 
-// --- SINCRONIZACIÓN MÁGICA (SOBRESCRITURA INTELIGENTE) ---
+
     async sincronizarTareasGlobales() {
         const globalTasks = await Cloud.getGlobalTasks();
         let added = 0;
@@ -82,18 +82,16 @@ const App = {
                 Store.addMateria(gt.materia);
                 added++;
             } else {
-                // 2. SI YA EXISTE: Actualizamos la información (Modo Edición del Admin)
-                
-                // Fusionamos la checklist: mantenemos los checks que el alumno ya había marcado
+
                 const nuevasSubtareas = (gt.subtareas || []).map(nuevaSub => {
                     const viejaSub = (exists.subtareas || []).find(s => s.texto === nuevaSub.texto);
                     return {
                         texto: nuevaSub.texto,
-                        completada: viejaSub ? viejaSub.completada : false // Recuerda si ya lo tachó
+                        completada: viejaSub ? viejaSub.completada : false
                     };
                 });
 
-                // Sobrescribimos los datos editables del profesor/admin
+
                 exists.globalId = gt.globalId;
                 exists.titulo = gt.titulo;
                 exists.materia = gt.materia;
@@ -103,7 +101,7 @@ const App = {
                 exists.notas = gt.notas;
                 exists.subtareas = nuevasSubtareas;
                 
-                // NOTA: NO tocamos exists.completada ni exists.calificacion para no borrarle el progreso al alumno
+
                 updated = true;
             }
         });
@@ -117,7 +115,7 @@ const App = {
     },
     
 
-    // --- LÓGICA DE FIREBASE Y USUARIOS ---
+
     authMode: 'login',
 
     switchAuthMode(mode) {
@@ -170,7 +168,7 @@ const App = {
 
     logout() { if(confirm("¿Seguro que quieres cerrar sesión?")) Cloud.logout(); },
 
-    // --- PANEL ADMIN (USUARIOS Y NUBE) ---
+    
     switchAdminTab(tab) {
         document.getElementById('tab-admin-users').classList.remove('active');
         document.getElementById('tab-admin-tasks').classList.remove('active');
@@ -222,7 +220,7 @@ const App = {
         }
     },
     
-    // --- CHECKLIST DEL ADMIN ---
+
     renderAdminSubtareas() {
         const container = document.getElementById('admin-subtasks-list');
         if (!container) return;
@@ -274,7 +272,7 @@ const App = {
         this.renderAdminSubtareas();
     },
 
-    // --- PAYWALL Y PERFIL ---
+    
     renderPremium() {
         const statusBox = document.getElementById('premium-status');
         const user = Cloud.userData;
@@ -349,7 +347,7 @@ const App = {
         clickSound.play();
     },
 
-    // --- NAVEGACIÓN Y VISTAS ---
+    
     cambiarTema(themeName) { document.body.setAttribute('data-theme', themeName); localStorage.setItem('top1_theme', themeName); },
     toggleMenu(forceClose = false) { const s = document.getElementById('sidebar'); if (forceClose) s.classList.remove('open'); else s.classList.toggle('open'); },
     showView(viewId, subjectName = null) {
@@ -576,9 +574,7 @@ document.addEventListener('DOMContentLoaded', () => App.init());
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
 }
-// ==========================================
-// --- SISTEMA DE INSTALACIÓN (PWA) 📲 ---
-// ==========================================
+
 let deferredPrompt;
 
 // 1. Detectar si el usuario está en un dispositivo Apple (iOS)
@@ -595,12 +591,9 @@ const isStandalone = () => {
 
 // 3. Atrapar el evento mágico de Chrome/Android
 window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevenir que Google muestre su propio cartel molesto en la parte inferior
     e.preventDefault();
-    // Guardar el evento para usarlo cuando el usuario presione nuestro botón
     deferredPrompt = e;
     
-    // Si la app NO está instalada, mostramos nuestro botón hermoso
     if (!isStandalone()) {
         const installZone = document.getElementById('pwa-install-zone');
         const profileBtn = document.getElementById('profile-install-btn');
@@ -610,25 +603,25 @@ window.addEventListener('beforeinstallprompt', (e) => {
     }
 });
 
-// 4. Lógica de los botones "Instalar"
+// 4. Lógica de los botones 
 const installApp = async () => {
     if (deferredPrompt) {
-        // Mostrar el aviso nativo de instalación
+
         deferredPrompt.prompt();
-        // Esperar a ver si el usuario aceptó o canceló
+
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
             console.log('✅ El usuario aceptó la instalación');
-            // Ocultar los botones porque ya la instaló
+
             document.getElementById('pwa-install-zone').style.display = 'none';
             document.getElementById('profile-install-btn').style.display = 'none';
         }
-        // Limpiamos el evento
+
         deferredPrompt = null;
     }
 };
 
-// Vincular los clics de los botones a la función (si los botones existen)
+
 document.addEventListener('DOMContentLoaded', () => {
     const mainBtn = document.getElementById('pwa-install-btn');
     const profBtn = document.getElementById('profile-install-btn');
@@ -637,6 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(profBtn) profBtn.addEventListener('click', installApp);
 
     // Si es un iPhone y no está instalada, mostrar las instrucciones de Apple
+    
     if (isIOS() && !isStandalone()) {
         const iosZone = document.getElementById('ios-install-zone');
         if(iosZone) iosZone.style.display = 'block';

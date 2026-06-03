@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SystemTopSchool</title>
-    <!-- Manifest para instalación PWA -->
+
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Librería de Confeti -->
+    
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body data-theme="default">
 
-<!-- Cabecera Mobile + Buscador + Perfil -->
+
 <div class="mobile-header">
     <button class="menu-btn" onclick="app.toggleMenu()"><i class="fas fa-bars"></i></button>
     
@@ -24,18 +24,17 @@
         <input type="text" id="global-search" placeholder="Buscar..." oninput="app.realizarBusqueda()">
     </div>
 
-    <!-- NUEVO: Botón de Perfil Circular -->
+    
     <div class="header-actions">
         <button id="header-profile-btn" class="profile-btn" onclick="app.toggleProfileMenu()">
-            <!-- La letra inicial se pondrá desde JS -->
+
             ?
         </button>
     </div>
 
-    <!-- MENÚ FLOTANTE DEL PERFIL -->
+    <!-- MENÚ DEL PERFIL -->
     <div id="profile-dropdown" class="profile-dropdown">
         <div class="profile-header-info">
-            <!-- Icono grande dentro del menú -->
             <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto;">
                 <i class="fas fa-user"></i>
             </div>
@@ -90,18 +89,15 @@
 </nav>
 
 <main id="main-content">
-<!-- BOTÓN ADMIN (OCULTO POR DEFECTO) -->
     <div id="nav-admin-btn" class="nav-item" onclick="app.showView('admin'); app.toggleMenu(true);" style="display:none; color: var(--danger); font-weight:bold;">
         <i class="fas fa-shield-alt"></i> Panel Admin 🛡️
     </div>
     
-<!-- VISTA DE LOGIN Y REGISTRO (REDISEÑADA Y CORREGIDA) -->
+
     <div id="view-auth" class="view">
-        <!-- Contenedor interno para centrar (así no rompemos la clase .view) -->
         <div style="display:flex; flex-direction:column; justify-content:center; min-height:100vh; padding:20px; background:var(--bg);">
             <div style="max-width: 400px; margin: 0 auto; width: 100%; text-align: center;">
                 
-                <!-- Logo Grande -->
                 <div style="width: 80px; height: 80px; background: var(--primary); color: white; border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 3rem; margin: 0 auto 20px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
                     <i class="fas fa-bolt"></i>
                 </div>
@@ -120,13 +116,12 @@
                 </div>
                 <div class="card" style="text-align: left; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid var(--border-color);">
                     
-                    <!-- Pestañas (Tabs) -->
+
                     <div style="display:flex; background:var(--bg); border-radius:12px; padding:6px; margin-bottom:25px; border: 1px solid var(--border-color);">
                         <button id="tab-login" onclick="app.switchAuthMode('login')" style="flex:1; padding:12px; border:none; border-radius:8px; background:var(--card-bg); color:var(--text-main); font-weight:bold; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:0.3s;">Iniciar Sesión</button>
                         <button id="tab-register" onclick="app.switchAuthMode('register')" style="flex:1; padding:12px; border:none; border-radius:8px; background:transparent; color:var(--text-muted); font-weight:bold; cursor:pointer; transition:0.3s;">Crear Cuenta</button>
                     </div>
 
-                    <!-- Campo de Nombre (Solo para Registro) -->
                     <div id="auth-name-group" style="display: none; transition: 0.3s;">
                         <label style="font-weight:bold; font-size:0.85rem; color:var(--text-muted);">Tu Apellido y Nombre</label>
                         <input type="text" id="auth-name" class="big-control" placeholder="Ej: Miguel Aponte" style="margin-top:8px; margin-bottom: 15px; padding: 14px; border-radius: 10px;">
@@ -148,13 +143,12 @@
         </div>
     </div>
 
-    <!-- NUEVO: VISTA PREMIUM (PAYWALL) -->
+    <!-- PAYWALL -->
     <div id="view-premium" class="view" style="text-align: center; padding: 20px;">
         <i class="fas fa-crown" style="font-size: 5rem; color: #fbbf24; margin-bottom: 20px;"></i>
         <h1 style="font-size: 2.5rem; margin-bottom: 10px;">Club Top 1%</h1>
         
         <div id="premium-status" class="card" style="margin-top: 20px; text-align: left; background: linear-gradient(135deg, #1f2937, #000); color: white; border: 1px solid #374151;">
-            <!-- El contenido cambia si es Gratis o Premium desde JavaScript -->
         </div>
     </div>
     
@@ -226,7 +220,7 @@
             
         </div>
     </div>
-<!-- VISTA DEL PANEL ADMIN SUPREMO -->
+
     <div id="view-admin" class="view">
         <h1 style="color:var(--danger); margin-top:0;"><i class="fas fa-shield-alt"></i> Mando Central</h1>
         <p style="color:var(--text-muted); margin-bottom: 20px;">Solo tú puedes ver esto, CEO.</p>
@@ -236,17 +230,15 @@
             <button class="filter-btn" id="tab-admin-tasks" onclick="app.switchAdminTab('tasks')">☁️ Tareas Nube</button>
         </div>
         
-        <!-- PESTAÑA: GESTIÓN DE USUARIOS -->
+
         <div id="admin-users-sec">
             <button class="btn-massive" style="margin-bottom: 20px;" onclick="app.loadAdminUsers()">🔄 Recargar Alumnos</button>
             <div id="admin-users-list" class="grid-cards"></div>
         </div>
 
-        <!-- PESTAÑA: SUBIR TAREAS GLOBALES -->
 
-<!-- PESTAÑA: SUBIR TAREAS GLOBALES -->
         <div id="admin-tasks-sec" style="display:none;">
-            <!-- OPCIÓN 1: MANUAL -->
+
             <div class="card" style="border: 2px solid var(--primary); margin-bottom: 20px;">
                 <h3>Subir Tarea Rápida a Premium</h3>
                 <input type="text" id="admin-titulo" class="big-control" placeholder="Ej: Examen Bimestral" style="margin-bottom:10px;">
@@ -267,7 +259,7 @@
                 <button class="btn-massive" style="background:var(--primary); margin:0;" onclick="app.subirTareaGlobal()">☁️ Inyectar Tarea</button>
             </div>
 
-            <!-- OPCIÓN 2: MASIVA -->
+
             <div class="card" style="border: 2px solid #10b981; text-align: center;">
                 <h3 style="color:#10b981; margin-top:0;"><i class="fas fa-file-upload"></i> Subida Masiva (JSON)</h3>
                 <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:15px;">Sube el backup de tu perfil para inyectar todas tus tareas a la vez.</p>
@@ -276,7 +268,7 @@
             </div>
         </div>
     </div>
-    <!-- VISTA FORMULARIO GIGANTE -->
+
 <div id="view-form" class="view">
         <div class="form-header">
             <h1 id="form-title" style="margin:0;">Crear Actividad</h1>
@@ -312,7 +304,7 @@
         <label style="font-weight:bold; display:block; margin-bottom:8px;">Checklist / Pasos para completarla (Opcional)</label>
         <div style="background: var(--bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
             <div id="form-subtasks-list" style="margin-bottom: 10px;">
-                <!-- Aquí aparecerán los pasos mientras los escribes -->
+
             </div>
             <div style="display: flex; gap: 8px;">
                 <input type="text" id="form-subtask-input" placeholder="Ej: Leer página 20..." style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main);" onkeypress="if(event.key==='Enter') app.agregarSubtareaForm()">
@@ -321,7 +313,7 @@
         </div>
         <button id="btn-save-form" class="btn-massive" onclick="app.guardarActividad()">Guardar Actividad</button>
     </div>
-    <!-- NUEVO: EDITOR JSON REMOTO DEL ADMIN -->
+    
     <div id="admin-json-editor" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; padding:20px; align-items:center; justify-content:center;">
         <div style="background:var(--card-bg); width:100%; max-width:600px; border-radius:15px; padding:20px; display:flex; flex-direction:column; height:85vh; border: 1px solid var(--border-color);">
             <h2 id="json-editor-title" style="margin-top:0; color:var(--primary);"><i class="fas fa-user-edit"></i> Editando a: ---</h2>
@@ -335,7 +327,7 @@
             </div>
         </div>
     </div>
-    <!-- VISTA DE TÉRMINOS Y CONDICIONES -->
+    
     <div id="view-terms" class="view" style="padding: 20px; max-width: 600px; margin: 0 auto;">
         <button onclick="app.showView('auth')" style="background:none; border:none; font-weight:bold; margin-bottom:15px; font-size:1.1rem; cursor:pointer; color:var(--text-main); padding: 10px 0;">
             <i class="fas fa-arrow-left"></i> Volver
