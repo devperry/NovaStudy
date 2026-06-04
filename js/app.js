@@ -314,7 +314,7 @@ const App = {
                     <div style="font-size:2.2rem; font-weight:800; color:white;">5.00 S/</div>
                     <div style="color:#aaa; font-size:0.8rem;">30 días (Ahorras 50 centimos)</div>
                 </div>
-                <button onclick="window.open('https://wa.me/51tu_numero', '_blank')" style="width:100%; background:var(--primary); color:white; border:none; padding:20px; border-radius:12px; margin-top:25px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                <button onclick="window.open('https://wa.me/51tnumerodeTlf', '_blank')" style="width:100%; background:var(--primary); color:white; border:none; padding:20px; border-radius:12px; margin-top:25px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                     <i class="fab fa-whatsapp"></i> Activar con Migue
                 </button>
             </div>
