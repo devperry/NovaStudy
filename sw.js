@@ -1,4 +1,4 @@
-const CACHE_NAME = 'top1-v7'; // Subimos la versión para limpiar caché viejo
+const CACHE_NAME = 'top1-v8'; // Subimos la versión para limpiar caché viejo
 
 const ASSETS = [
   './',
