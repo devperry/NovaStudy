@@ -305,14 +305,14 @@ const App = {
                 </ul>
                 <div style="background:var(--card-bg); border:2px solid var(--border-color); padding:20px; border-radius:15px; margin-bottom:15px;">
                     <div style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">PLAN SEMANAL</div>
-                    <div style="font-size:1.8rem; font-weight:800; color:var(--text-main);">1.50 S/</div>
+                    <div style="font-size:1.8rem; font-weight:800; color:var(--text-main);">1/</div>
                     <div style="color:var(--text-muted); font-size:0.8rem;">7 días de acceso VIP</div>
                 </div>
                 <div style="background: linear-gradient(135deg, #1e2937, #000); padding:25px; border-radius:15px; border:2px solid #fbbf24; position:relative; color: white;">
                     <div style="position:absolute; top:-12px; right:15px; background:#fbbf24; color:black; font-size:0.7rem; font-weight:bold; padding:4px 10px; border-radius:20px;">MÁS POPULAR</div>
                     <div style="color:#fbbf24; font-size:0.8rem; font-weight:bold;">PLAN MENSUAL</div>
-                    <div style="font-size:2.2rem; font-weight:800; color:white;">5.00 S/</div>
-                    <div style="color:#aaa; font-size:0.8rem;">30 días (Ahorras 50 centimos)</div>
+                    <div style="font-size:2.2rem; font-weight:800; color:white;">3.00 S/</div>
+                    <div style="color:#aaa; font-size:0.8rem;">30 días (Ahorras 1 Sol)</div>
                 </div>
                 <button onclick="window.open('https://wa.me/51tnumerodeTlf', '_blank')" style="width:100%; background:var(--primary); color:white; border:none; padding:20px; border-radius:12px; margin-top:25px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                     <i class="fab fa-whatsapp"></i> Activar con Migue
@@ -612,7 +612,6 @@ const installApp = async () => {
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
             console.log('✅ El usuario aceptó la instalación');
-
             document.getElementById('pwa-install-zone').style.display = 'none';
             document.getElementById('profile-install-btn').style.display = 'none';
         }
