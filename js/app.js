@@ -10,18 +10,19 @@ const clickSound = new Audio("./assets/sfx/uiClick.mp3");
 clickSound.volume = 0.5;
 const deleteSound = new Audio("./assets/sfx/eraseCutted.mp3");
 deleteSound.volume = 1;
+
 const App = {
     editModeId: null, 
     vistaAnterior: 'dashboard', 
     materiaFiltroCompletadas: false,
-    tempSubtareas: [],        
-    adminTempSubtareas: [],  
+    tempSubtareas: [],        // Memoria para formulario privado
+    adminTempSubtareas: [],   // Memoria para formulario Admin
 
     init() {
         Store.init();
         const savedTheme = localStorage.getItem('top1_theme') || 'default';
         this.cambiarTema(savedTheme);
-        //Funcion Para iniciar el auth
+
         Cloud.initAuth(
             (userData) => {
                 document.querySelector('.mobile-header').style.display = 'flex';
@@ -35,8 +36,7 @@ const App = {
 
                 if (userData.role === 'admin' || userData.role === 'premium') {
                     this.sincronizarTareasGlobales();
-                }else {
-
+                } else {
                     Store.purgarTareasPremium();
                 }
 
@@ -51,21 +51,19 @@ const App = {
         );
     },
 
-
+    // --- SINCRONIZACIÓN MÁGICA (CORREGIDA) ---
     async sincronizarTareasGlobales() {
         const globalTasks = await Cloud.getGlobalTasks();
         let added = 0;
         let updated = false;
         
         globalTasks.forEach(gt => {
-            // Buscamos si la tarea ya existe en el celular
             const exists = Store.state.actividades.find(a => 
                 a.globalId === gt.globalId || 
                 (a.titulo.trim().toLowerCase() === gt.titulo.trim().toLowerCase() && a.materia === gt.materia)
             );
 
             if (!exists) {
-                // 1. SI NO EXISTE: Inyectamos como tarea totalmente nueva
                 Store.state.actividades.push({
                     id: Date.now() + Math.random(), 
                     globalId: gt.globalId, 
@@ -82,7 +80,6 @@ const App = {
                 Store.addMateria(gt.materia);
                 added++;
             } else {
-
                 const nuevasSubtareas = (gt.subtareas || []).map(nuevaSub => {
                     const viejaSub = (exists.subtareas || []).find(s => s.texto === nuevaSub.texto);
                     return {
@@ -90,7 +87,6 @@ const App = {
                         completada: viejaSub ? viejaSub.completada : false
                     };
                 });
-
 
                 exists.globalId = gt.globalId;
                 exists.titulo = gt.titulo;
@@ -100,8 +96,6 @@ const App = {
                 exists.dificultad = gt.dificultad;
                 exists.notas = gt.notas;
                 exists.subtareas = nuevasSubtareas;
-                
-
                 updated = true;
             }
         });
@@ -113,9 +107,8 @@ const App = {
             console.log(`☁️ Sincronización completa: ${added} Tareas nuevas, y se actualizaron las existentes.`);
         }
     },
-    
 
-
+    // --- LÓGICA DE FIREBASE Y USUARIOS ---
     authMode: 'login',
 
     switchAuthMode(mode) {
@@ -168,7 +161,7 @@ const App = {
 
     logout() { if(confirm("¿Seguro que quieres cerrar sesión?")) Cloud.logout(); },
 
-    
+    // --- PANEL ADMIN ---
     switchAdminTab(tab) {
         document.getElementById('tab-admin-users').classList.remove('active');
         document.getElementById('tab-admin-tasks').classList.remove('active');
@@ -178,6 +171,10 @@ const App = {
         document.getElementById('admin-tasks-sec').style.display = tab === 'tasks' ? 'block' : 'none';
         
         if (tab === 'users') this.loadAdminUsers();
+        if (tab === 'tasks') {
+            this.adminTempSubtareas = [];
+            this.renderAdminSubtareas(); // Inicializar UI de checklist del Admin
+        }
     },
 
     async loadAdminUsers() {
@@ -213,14 +210,13 @@ const App = {
     
     async resetDevice(uid) {
         if (confirm("¿Permitir que este usuario inicie sesión en un celular nuevo?")) {
-            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-            await updateDoc(doc(Cloud.db, "users", uid), { deviceId: "" });
+            await Cloud.resetUserDevice(uid);
             alert("✅ Dispositivo reseteado.");
             this.loadAdminUsers();
         }
     },
-    
 
+    // --- CHECKLIST DEL ADMIN ---
     renderAdminSubtareas() {
         const container = document.getElementById('admin-subtasks-list');
         if (!container) return;
@@ -272,7 +268,7 @@ const App = {
         this.renderAdminSubtareas();
     },
 
-    
+    // --- PAYWALL Y PERFIL ---
     renderPremium() {
         const statusBox = document.getElementById('premium-status');
         const user = Cloud.userData;
@@ -305,13 +301,13 @@ const App = {
                 </ul>
                 <div style="background:var(--card-bg); border:2px solid var(--border-color); padding:20px; border-radius:15px; margin-bottom:15px;">
                     <div style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">PLAN SEMANAL</div>
-                    <div style="font-size:1.8rem; font-weight:800; color:var(--text-main);">1/</div>
+                    <div style="font-size:1.8rem; font-weight:800; color:var(--text-main);">1.50 S/</div>
                     <div style="color:var(--text-muted); font-size:0.8rem;">7 días de acceso VIP</div>
                 </div>
                 <div style="background: linear-gradient(135deg, #1e2937, #000); padding:25px; border-radius:15px; border:2px solid #fbbf24; position:relative; color: white;">
                     <div style="position:absolute; top:-12px; right:15px; background:#fbbf24; color:black; font-size:0.7rem; font-weight:bold; padding:4px 10px; border-radius:20px;">MÁS POPULAR</div>
                     <div style="color:#fbbf24; font-size:0.8rem; font-weight:bold;">PLAN MENSUAL</div>
-                    <div style="font-size:2.2rem; font-weight:800; color:white;">3.00 S/</div>
+                    <div style="font-size:2.2rem; font-weight:800; color:white;">5.00 S/</div>
                     <div style="color:#aaa; font-size:0.8rem;">30 días (Ahorras 1 Sol)</div>
                 </div>
                 <button onclick="window.open('https://wa.me/51tnumerodeTlf', '_blank')" style="width:100%; background:var(--primary); color:white; border:none; padding:20px; border-radius:12px; margin-top:25px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
@@ -347,7 +343,6 @@ const App = {
         clickSound.play();
     },
 
-    
     cambiarTema(themeName) { document.body.setAttribute('data-theme', themeName); localStorage.setItem('top1_theme', themeName); },
     toggleMenu(forceClose = false) { const s = document.getElementById('sidebar'); if (forceClose) s.classList.remove('open'); else s.classList.toggle('open'); },
     showView(viewId, subjectName = null) {
@@ -384,12 +379,12 @@ const App = {
             document.getElementById('tipo-select').value = act.tipo; 
             document.getElementById('fecha-input').value = act.fecha;
             document.getElementById('dificultad-select').value = act.dificultad; 
-            document.getElementById('notas-input').value = act.notas;
+            document.getElementById('notes-input').value = act.notas;
             this.tempSubtareas = act.subtareas ? [...act.subtareas] : [];
         } else {
             document.getElementById('titulo').value = ''; 
             document.getElementById('fecha-input').value = ''; 
-            document.getElementById('notas-input').value = '';
+            document.getElementById('notes-input').value = '';
             if (this.vistaAnterior !== 'dashboard' && this.vistaAnterior !== 'aspecto' && this.vistaAnterior !== 'premium' && this.vistaAnterior !== 'admin') {
                 document.getElementById('materia-select').value = this.vistaAnterior;
             }
@@ -507,7 +502,8 @@ const App = {
         if (['dashboard', 'aspecto', 'premium', 'admin'].includes(this.vistaAnterior)) this.realizarBusqueda();
         else this.renderSubjectDetail(document.getElementById('subject-name-display').innerText);
     },
-    // --- SISTEMA DE ARCHIVOS (MODALES) ---
+
+    // --- SISTEMA DE ARCHIVOS (MODALES) (RECONECTADO) ---
     openModal(modalId) {
         document.getElementById('modal-overlay').classList.add('show');
         document.querySelectorAll('.modal-card').forEach(c => c.style.display = 'none');
@@ -577,19 +573,15 @@ if ('serviceWorker' in navigator) {
 
 let deferredPrompt;
 
-// 1. Detectar si el usuario está en un dispositivo Apple (iOS)
-//const isIOS = () => true; Debug
 const isIOS = () => {
     const userAgent = window.navigator.userAgent.toLowerCase();
     return /iphone|ipad|ipod/.test(userAgent);
 };
 
-// 2. Comprobar si la app YA ESTÁ instalada o si la están abriendo desde la pantalla de inicio
 const isStandalone = () => {
     return (window.matchMedia('(display-mode: standalone)').matches) || (window.navigator.standalone) || document.referrer.includes('android-app://');
 };
 
-// 3. Atrapar el evento mágico de Chrome/Android
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
@@ -603,23 +595,18 @@ window.addEventListener('beforeinstallprompt', (e) => {
     }
 });
 
-// 4. Lógica de los botones 
 const installApp = async () => {
     if (deferredPrompt) {
-
         deferredPrompt.prompt();
-
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
             console.log('✅ El usuario aceptó la instalación');
             document.getElementById('pwa-install-zone').style.display = 'none';
             document.getElementById('profile-install-btn').style.display = 'none';
         }
-
         deferredPrompt = null;
     }
 };
-
 
 document.addEventListener('DOMContentLoaded', () => {
     const mainBtn = document.getElementById('pwa-install-btn');
@@ -628,14 +615,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if(mainBtn) mainBtn.addEventListener('click', installApp);
     if(profBtn) profBtn.addEventListener('click', installApp);
 
-    // Si es un iPhone y no está instalada, mostrar las instrucciones de Apple
-    
     if (isIOS() && !isStandalone()) {
         const iosZone = document.getElementById('ios-install-zone');
         if(iosZone) iosZone.style.display = 'block';
     }
 });
-
 
 document.addEventListener('click', (e) => {
     const btn = document.getElementById('header-profile-btn');
