@@ -22,7 +22,7 @@ const App = {
         Store.init();
         const savedTheme = localStorage.getItem('top1_theme') || 'default';
         this.cambiarTema(savedTheme);
-        
+        //Funcion Para iniciar el auth
         Cloud.initAuth(
             (userData) => {
                 document.querySelector('.mobile-header').style.display = 'flex';
@@ -51,19 +51,21 @@ const App = {
         );
     },
 
-    // --- SINCRONIZACIÓN MÁGICA ---
+    // --- SINCRONIZACIÓN MÁGICA (CORREGIDA) ---
     async sincronizarTareasGlobales() {
         const globalTasks = await Cloud.getGlobalTasks();
         let added = 0;
         let updated = false;
         
         globalTasks.forEach(gt => {
+            // Buscamos si la tarea ya existe en el celular de forma segura
             const exists = Store.state.actividades.find(a => 
                 a.globalId === gt.globalId || 
                 (a.titulo.trim().toLowerCase() === gt.titulo.trim().toLowerCase() && a.materia === gt.materia)
             );
 
             if (!exists) {
+                // 1. SI NO EXISTE: Inyectamos como tarea totalmente nueva
                 Store.state.actividades.push({
                     id: Date.now() + Math.random(), 
                     globalId: gt.globalId, 
@@ -80,6 +82,7 @@ const App = {
                 Store.addMateria(gt.materia);
                 added++;
             } else {
+                // 2. SI YA EXISTE: Actualizamos con los cambios del Admin (Smart Update)
                 const nuevasSubtareas = (gt.subtareas || []).map(nuevaSub => {
                     const viejaSub = (exists.subtareas || []).find(s => s.texto === nuevaSub.texto);
                     return {
@@ -104,6 +107,19 @@ const App = {
         if (added > 0 || updated) {
             Store.save();
             UI.renderNav(Store.state.materias);
+            this.refrescarVistaActual();
+            console.log(`☁️ Sincronización completa: ${added} Tareas nuevas, y se actualizaron las existentes.`);
+        }
+    },
+
+    // --- NUEVO: EDITAR DESCRIPCIÓN DE MATERIA ---
+    editarMateriaDescripcion() {
+        const nombre = document.getElementById('subject-name-display').innerText;
+        const mat = Store.state.materias.find(m => m.nombre === nombre);
+        const descActual = mat ? (mat.descripcion || "") : "";
+        const nuevaDesc = prompt(`Editar descripción de ${nombre}:`, descActual);
+        if (nuevaDesc !== null) {
+            Store.updateMateriaDescripcion(nombre, nuevaDesc.trim());
             this.refrescarVistaActual();
         }
     },
@@ -248,20 +264,13 @@ const App = {
     },
 
     async subirTareaGlobal() {
-        const elTitulo = document.getElementById('admin-titulo');
-        const elMateria = document.getElementById('admin-materia');
-        const elTipo = document.getElementById('admin-tipo');
-        const elFecha = document.getElementById('admin-fecha');
-        const elDificultad = document.getElementById('admin-dificultad');
-        const elNotas = document.getElementById('admin-notas');
-
         const data = {
-            titulo: elTitulo ? elTitulo.value : '',
-            materia: elMateria ? elMateria.value : '',
-            tipo: elTipo ? elTipo.value : 'Tarea',
-            fecha: elFecha ? elFecha.value : '',
-            dificultad: elDificultad ? elDificultad.value : 'Medio',
-            notas: elNotas ? elNotas.value : '',
+            titulo: document.getElementById('admin-titulo').value,
+            materia: document.getElementById('admin-materia').value,
+            tipo: document.getElementById('admin-tipo').value,
+            fecha: document.getElementById('admin-fecha').value,
+            dificultad: document.getElementById('admin-dificultad').value,
+            notas: document.getElementById('admin-notas').value,
             subtareas: this.adminTempSubtareas 
         };
         if(!data.titulo || !data.materia || !data.fecha) return alert("Llena Título, Materia y Fecha.");
@@ -269,8 +278,8 @@ const App = {
         await Cloud.addGlobalTask(data);
         alert("☁️ ¡Tarea Inyectada a todos los celulares Premium!");
         
-        if (elTitulo) elTitulo.value = '';
-        if (elNotas) elNotas.value = '';
+        document.getElementById('admin-titulo').value = '';
+        document.getElementById('admin-notas').value = '';
         this.adminTempSubtareas = [];
         this.renderAdminSubtareas();
     },
@@ -381,7 +390,7 @@ const App = {
         clickSound.play();
         this.editModeId = id;
 
-        // BINDING SEGURO (Prevenir desajustes de cache del sw.js)
+        // BINDING DE SEGURIDAD (MIGUE: Esto evita crasheos si hay desfase de sw.js)
         const elTitulo = document.getElementById('titulo');
         const elMateria = document.getElementById('materia-select');
         const elTipo = document.getElementById('tipo-select');
@@ -564,7 +573,7 @@ const App = {
         reader.readAsText(file);
     },
 
-    // NUEVA: Subida masiva bidireccional (Tareas y Materias)
+    // Sincronización masiva de plantillas
     async subirMasterJSON() {
         const fileInput = document.getElementById('admin-master-file');
         if (!fileInput.files.length) return alert("Selecciona el archivo JSON primero.");
@@ -576,13 +585,10 @@ const App = {
                 const data = JSON.parse(e.target.result);
                 if (!data.actividades || !data.materias) throw new Error("JSON Inválido");
                 
-                // 1. Subir Tareas a Firestore
                 await Cloud.uploadMasterTasks(data.actividades);
-                
-                // 2. Subir Materias (con descripciones) a Firestore
                 await Cloud.uploadMasterSubjects(data.materias);
 
-                alert("☁️ ¡ARCHIVO MAESTRO SUBIDO! Sincronización masiva de tareas y descripciones completada.");
+                alert("☁️ ¡ARCHIVO MAESTRO SUBIDO! Sincronización masiva completada.");
                 fileInput.value = '';
             } catch (err) { alert("❌ Error procesando el JSON maestro."); }
         };
