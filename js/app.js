@@ -51,8 +51,23 @@ const App = {
         );
     },
 
-    // --- SINCRONIZACIÓN MÁGICA (CORREGIDA) ---
+    // --- NUEVA SINCRONIZACIÓN MÁGICA COMPLETA ---
     async sincronizarTareasGlobales() {
+        // 1. Sincronizar Materias y sus Descripciones de la Nube
+        const globalSubjects = await Cloud.getGlobalSubjects();
+        globalSubjects.forEach(gs => {
+            const localMat = Store.state.materias.find(m => m.nombre === gs.nombre);
+            if (!localMat) {
+                // Si la materia no existe localmente, la agregamos con su descripción
+                Store.state.materias.push(gs);
+            } else {
+                // Si existe, le actualizamos la descripción y el color de la nube
+                localMat.descripcion = gs.descripcion || "";
+                localMat.color = gs.color;
+            }
+        });
+
+        // 2. Sincronizar Actividades de la Nube
         const globalTasks = await Cloud.getGlobalTasks();
         let added = 0;
         let updated = false;
@@ -94,6 +109,7 @@ const App = {
                 exists.tipo = gt.tipo;
                 exists.fecha = gt.fecha;
                 exists.dificultad = gt.dificultad;
+                exists.notes = gt.notes; // Evitamos desvío de variables
                 exists.notas = gt.notas;
                 exists.subtareas = nuevasSubtareas;
                 updated = true;
@@ -105,6 +121,18 @@ const App = {
             UI.renderNav(Store.state.materias);
             this.refrescarVistaActual();
             console.log(`☁️ Sincronización completa: ${added} Tareas nuevas, y se actualizaron las existentes.`);
+        }
+    },
+
+    // --- NUEVO: EDITAR DESCRIPCIÓN DE MATERIA ---
+    editarMateriaDescripcion() {
+        const nombre = document.getElementById('subject-name-display').innerText;
+        const mat = Store.state.materias.find(m => m.nombre === nombre);
+        const descActual = mat ? (mat.descripcion || "") : "";
+        const nuevaDesc = prompt(`Editar descripción de ${nombre}:`, descActual);
+        if (nuevaDesc !== null) {
+            Store.updateMateriaDescripcion(nombre, nuevaDesc.trim());
+            this.refrescarVistaActual();
         }
     },
 
@@ -173,7 +201,7 @@ const App = {
         if (tab === 'users') this.loadAdminUsers();
         if (tab === 'tasks') {
             this.adminTempSubtareas = [];
-            this.renderAdminSubtareas(); // Inicializar UI de checklist del Admin
+            this.renderAdminSubtareas();
         }
     },
 
@@ -343,6 +371,7 @@ const App = {
         clickSound.play();
     },
 
+    // --- NAVEGACIÓN Y VISTAS ---
     cambiarTema(themeName) { document.body.setAttribute('data-theme', themeName); localStorage.setItem('top1_theme', themeName); },
     toggleMenu(forceClose = false) { const s = document.getElementById('sidebar'); if (forceClose) s.classList.remove('open'); else s.classList.toggle('open'); },
     showView(viewId, subjectName = null) {
@@ -356,7 +385,7 @@ const App = {
             document.getElementById('subject-name-display').innerText = subjectName;
             this.materiaFiltroCompletadas = false;
             UI.actualizarBotonesFiltro(this.materiaFiltroCompletadas);
-            this.renderSubjectDetail(subjectName);
+            this.renderSubjectDetail(subjectName, Store.state.materias, Store.getPromedio(subjectName));
             this.toggleMenu(true);
         } else if (viewId === 'dashboard') {
             document.getElementById('global-search').value = ''; this.renderDashboard(); this.toggleMenu(true);
@@ -448,7 +477,7 @@ const App = {
             tipo: document.getElementById('tipo-select').value, 
             fecha, 
             dificultad: document.getElementById('dificultad-select').value, 
-            notas: document.getElementById('notas-input').value,
+            notas: document.getElementById('notes-input').value,
             subtareas: this.tempSubtareas
         };
         Store.guardarActividad(data, this.editModeId);
@@ -459,7 +488,7 @@ const App = {
     // --- ACCIONES GENERALES ---
     agregarMateria() { const n = prompt("Nombre de la nueva materia:"); if (Store.addMateria(n)) { UI.renderNav(Store.state.materias); UI.renderSelectMaterias(Store.state.materias); } },
     realizarBusqueda() { this.renderDashboard(document.getElementById('global-search').value.toLowerCase()); },
-    setFiltroMateria(ver) { this.materiaFiltroCompletadas = ver; UI.actualizarBotonesFiltro(ver); this.renderSubjectDetail(document.getElementById('subject-name-display').innerText); },
+    setFiltroMateria(ver) { this.materiaFiltroCompletadas = ver; UI.actualizarBotonesFiltro(ver); this.renderSubjectDetail(document.getElementById('subject-name-display').innerText, Store.state.materias, Store.getPromedio(document.getElementById('subject-name-display').innerText)); },
 
     toggleCompletada(id) { 
         const act = Store.getActividadById(id);
@@ -503,7 +532,7 @@ const App = {
         else this.renderSubjectDetail(document.getElementById('subject-name-display').innerText);
     },
 
-    // --- SISTEMA DE ARCHIVOS (MODALES) (RECONECTADO) ---
+    // --- SISTEMA DE ARCHIVOS (MODALES) ---
     openModal(modalId) {
         document.getElementById('modal-overlay').classList.add('show');
         document.querySelectorAll('.modal-card').forEach(c => c.style.display = 'none');
@@ -545,6 +574,7 @@ const App = {
         reader.readAsText(file);
     },
 
+    // NUEVA: Subida masiva bidireccional (Tareas y Materias)
     async subirMasterJSON() {
         const fileInput = document.getElementById('admin-master-file');
         if (!fileInput.files.length) return alert("Selecciona el archivo JSON primero.");
@@ -554,11 +584,17 @@ const App = {
         reader.onload = async (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                if (!data.actividades) throw new Error("JSON Inválido");
+                if (!data.actividades || !data.materias) throw new Error("JSON Inválido");
+                
+                // 1. Subir Tareas a Firestore
                 await Cloud.uploadMasterTasks(data.actividades);
-                alert("☁️ ¡ARCHIVO MAESTRO SUBIDO! Todos los usuarios Premium recibirán estas tareas.");
+                
+                // 2. Subir Materias (con descripciones) a Firestore
+                await Cloud.uploadMasterSubjects(data.materias);
+
+                alert("☁️ ¡ARCHIVO MAESTRO SUBIDO! Sincronización masiva de tareas y descripciones completada.");
                 fileInput.value = '';
-            } catch (err) { alert("❌ Error procesando el JSON."); }
+            } catch (err) { alert("❌ Error procesando el JSON maestro."); }
         };
         reader.readAsText(file);
     }

@@ -4,8 +4,13 @@ export const Store = {
     state: { materias: [], actividades: [] },
 
     init() {
-        this.state.materias = JSON.parse(localStorage.getItem('top1_mats_v3')) || [{ nombre: "Matemáticas", color: "#3b82f6" }];
+        // Inicializar materias con descripción por defecto vacía si no existe
+        const localMats = JSON.parse(localStorage.getItem('top1_mats_v3'));
+        this.state.materias = localMats || [{ nombre: "Matemáticas", color: "#3b82f6", descripcion: "" }];
         this.state.actividades = JSON.parse(localStorage.getItem('top1_acts_v3')) || [];
+
+        // NUEVO: Ejecutar limpieza automática al arrancar la app
+        this.ejecutarLimpiezaAutomatica();
     },
 
     save() {
@@ -13,10 +18,61 @@ export const Store = {
         localStorage.setItem('top1_acts_v3', JSON.stringify(this.state.actividades));
     },
 
-    addMateria(nombre) {
-        if (!nombre || this.state.materias.find(m => m.nombre === nombre)) return false;
+    // NUEVO: Auto-limpieza inteligente (7 días)
+    ejecutarLimpiezaAutomatica() {
+        const hoy = new Date();
+        hoy.setHours(0,0,0,0);
+        const totalAntes = this.state.actividades.length;
+
+        this.state.actividades = this.state.actividades.filter(a => {
+            if (!a.fecha) return true; // Tareas sin fecha no se borran
+
+            const fechaT = new Date(a.fecha + 'T00:00:00');
+            const diffDias = Math.ceil((fechaT - hoy) / (1000 * 60 * 60 * 24));
+
+            // Si está atrasada por más de 7 días
+            if (diffDias < -7) {
+                // Si es un apunte ("Otro"), no la borramos
+                if (a.tipo === 'Otro') return true;
+                // Si es Tarea o Examen y tiene nota, la CONSERVAMOS para no romper promedios
+                if ((a.tipo === 'Tarea' || a.tipo === 'Examen') && (a.calificacion && a.calificacion.toString().trim() !== '')) {
+                    return true;
+                }
+                return false; // Se elimina si tiene más de 7 días vencido y no tiene calificación
+            }
+            return true;
+        });
+
+        if (totalAntes !== this.state.actividades.length) {
+            this.save();
+            console.log(`🧹 Limpieza automática ejecutada: Se eliminaron ${totalAntes - this.state.actividades.length} actividades obsoletas.`);
+        }
+    },
+
+    addMateria(nombre, descripcion = "") {
+        if (!nombre) return false;
+        const existing = this.state.materias.find(m => m.nombre === nombre);
+        if (existing) {
+            // Si la materia existe pero no tiene descripción, la actualizamos
+            if (descripcion && !existing.descripcion) {
+                existing.descripcion = descripcion;
+                this.save();
+            }
+            return false;
+        }
         const color = PALETTE[this.state.materias.length % PALETTE.length];
-        this.state.materias.push({ nombre, color }); this.save(); return true;
+        this.state.materias.push({ nombre, color, descripcion });
+        this.save();
+        return true;
+    },
+
+    // NUEVO: Modificar la descripción de la materia
+    updateMateriaDescripcion(nombre, descripcion) {
+        const mat = this.state.materias.find(m => m.nombre === nombre);
+        if (mat) {
+            mat.descripcion = descripcion;
+            this.save();
+        }
     },
 
     guardarActividad(actividadData, editId = null) {
@@ -28,16 +84,11 @@ export const Store = {
         }
         this.save();
     },
-    
+
     purgarTareasPremium() {
         const cantidadAntes = this.state.actividades.length;
-        // Filtramos para quedarnos ÚNICAMENTE con las tareas creadas manualmente (sin globalId)
         this.state.actividades = this.state.actividades.filter(a => !a.globalId);
-        
-        // Si borramos algo, guardamos los cambios en el celular
-        if (cantidadAntes !== this.state.actividades.length) {
-            this.save();
-        }
+        if (cantidadAntes !== this.state.actividades.length) { this.save(); }
     },
 
     deleteMateria(nombre) {
@@ -46,9 +97,8 @@ export const Store = {
         this.save();
     },
 
-    // --- IMPORT / EXPORT (ARCHIVOS JSON) ---
     getExportJSON() {
-        const cleanActs = this.state.actividades.filter(a => !a.globalId); // Filtra Premium
+        const cleanActs = this.state.actividades.filter(a => !a.globalId);
         const dataObj = { materias: this.state.materias, actividades: cleanActs, theme: localStorage.getItem('top1_theme') || 'default' };
         return JSON.stringify(dataObj, null, 2);
     },
@@ -64,7 +114,13 @@ export const Store = {
                 this.state.actividades = [...data.actividades, ...premiumTasks];
             } else {
                 data.materias.forEach(newMat => {
-                    if (!this.state.materias.find(m => m.nombre === newMat.nombre)) this.state.materias.push(newMat);
+                    const existing = this.state.materias.find(m => m.nombre === newMat.nombre);
+                    if (!existing) {
+                        this.state.materias.push(newMat);
+                    } else if (newMat.descripcion && !existing.descripcion) {
+                        // Si ya existe la materia pero no tenía descripción, le inyectamos la del archivo
+                        existing.descripcion = newMat.descripcion;
+                    }
                 });
                 data.actividades.forEach(newAct => {
                     if (!this.state.actividades.find(a => a.id === newAct.id)) this.state.actividades.push(newAct);

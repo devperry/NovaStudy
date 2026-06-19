@@ -16,6 +16,21 @@ export const UI = {
     },
 
     renderSubjectDetail(actividades, materiasStore, promedio) {
+        // NUEVO: Renderizar descripción de la materia
+        const subjectName = document.getElementById('subject-name-display').innerText;
+        const mat = materiasStore.find(m => m.nombre === subjectName);
+        const descDisplay = document.getElementById('subject-desc-display');
+        
+        if (descDisplay) {
+            if (mat && mat.descripcion && mat.descripcion.trim() !== "") {
+                descDisplay.innerText = mat.descripcion;
+                descDisplay.style.display = 'block';
+            } else {
+                descDisplay.innerText = "";
+                descDisplay.style.display = 'none';
+            }
+        }
+
         const avgDisplay = document.querySelector('#subject-average span');
         if(promedio) { avgDisplay.innerText = promedio; document.getElementById('subject-average').style.display = 'flex'; } 
         else { document.getElementById('subject-average').style.display = 'none'; }
@@ -52,7 +67,7 @@ export const UI = {
         document.body.appendChild(card);
         setTimeout(() => { const el = document.getElementById('dev-card'); if(el) { el.style.opacity = '0'; el.style.transition = '1s'; setTimeout(()=>el.remove(), 1000); } }, 8000);
     },
-    //funcion para crear las materias
+
     createCard(a, materiasStore) {
         const mat = materiasStore.find(m => m.nombre === a.materia);
         const color = mat ? mat.color : '#ccc';

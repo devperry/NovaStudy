@@ -16,50 +16,75 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 export const Cloud = {
-    user: null, userData: null,
+    user: null,
+    userData: null,
 
     getDeviceId() {
         let deviceId = localStorage.getItem('top1_device_id');
-        if (!deviceId) { deviceId = Math.random().toString(36).substring(2, 15); localStorage.setItem('top1_device_id', deviceId); }
+        if (!deviceId) {
+            deviceId = Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('top1_device_id', deviceId);
+        }
         return deviceId;
     },
-    
-    
-    
+
     initAuth(onLogin, onLogout) {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const hoy = new Date().toISOString().split('T')[0];
-                const localData = localStorage.getItem('top1_user_data');
                 
+                // 1. PASE VIP OFFLINE (Memoria Rápida)
+                const localData = localStorage.getItem('top1_user_data');
                 if (localData) {
                     let parsedData = JSON.parse(localData);
                     if (parsedData.role === 'premium' && parsedData.premiumHasta && hoy > parsedData.premiumHasta) {
-                        parsedData.role = 'free'; localStorage.setItem('top1_user_data', JSON.stringify(parsedData));
+                        parsedData.role = 'free';
+                        localStorage.setItem('top1_user_data', JSON.stringify(parsedData));
                     }
-                    this.user = user; this.userData = parsedData; onLogin(this.userData);
+                    this.user = user;
+                    this.userData = parsedData;
+                    onLogin(this.userData);
                 }
 
+                // 2. SINCRONIZACIÓN CON EL SERVIDOR
                 try {
                     const docRef = doc(db, "users", user.uid);
                     const docSnap = await getDoc(docRef);
+                    
                     if (docSnap.exists()) {
                         let data = docSnap.data();
+                        
                         if (!data.deviceId || data.deviceId === "") {
-                            await updateDoc(docRef, { deviceId: this.getDeviceId() }); data.deviceId = this.getDeviceId();
+                            await updateDoc(docRef, { deviceId: this.getDeviceId() });
+                            data.deviceId = this.getDeviceId();
                         } else if (data.deviceId !== this.getDeviceId()) {
-                            alert("🚨 ACCESO DENEGADO: Cuenta vinculada a otro celular."); await this.logout(); return;
+                            alert("🚨 ACCESO DENEGADO: Cuenta vinculada a otro celular.");
+                            await this.logout();
+                            return;
                         }
-                        if (data.role === 'premium' && data.premiumHasta && hoy > data.premiumHasta) {
-                            await updateDoc(docRef, { role: 'free' }); data.role = 'free'; alert("🛑 Tu suscripción Premium ha caducado.");
+
+                        if (data.role === 'premium' && data.premiumHasta) {
+                            const hoy = new Date().toISOString().split('T')[0];
+                            if (hoy > data.premiumHasta) {
+                                await updateDoc(docRef, { role: 'free' });
+                                data.role = 'free';
+                                alert("🛑 Tu suscripción Premium ha caducado.");
+                            }
                         }
-                        this.user = user; this.userData = data;
+
+                        this.user = user;
+                        this.userData = data;
                         localStorage.setItem('top1_user_data', JSON.stringify(data));
                         if (!localData) onLogin(data);
                     }
-                } catch (error) { console.log("☁️ Modo Offline"); }
+                } catch (error) {
+                    console.log("☁️ Modo Offline: No hay conexión con la Nube.");
+                }
             } else {
-                this.user = null; this.userData = null; localStorage.removeItem('top1_user_data'); onLogout();
+                this.user = null;
+                this.userData = null;
+                localStorage.removeItem('top1_user_data');
+                onLogout();
             }
         });
     },
@@ -67,34 +92,56 @@ export const Cloud = {
     async register(email, password, nombre) {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            await setDoc(doc(db, "users", userCredential.user.uid), { email, nombre, role: "free", deviceId: this.getDeviceId(), premiumHasta: null });
+            const user = userCredential.user;
+            await setDoc(doc(db, "users", user.uid), {
+                email: email,
+                nombre: nombre,
+                role: "free",
+                deviceId: this.getDeviceId(),
+                premiumHasta: null
+            });
             return { success: true };
         } catch (error) { return { success: false, error: error.message }; }
     },
+
     async login(email, password) {
         try { await signInWithEmailAndPassword(auth, email, password); return { success: true }; } 
-        catch (error) { return { success: false, error: "Correo/Contraseña incorrectos." }; }
+        catch (error) { return { success: false, error: "Correo o contraseña incorrectos." }; }
     },
+
     async logout() { await signOut(auth); },
 
+    // --- PODERES DE ADMINISTRADOR ---
     async getAllUsers() {
         try {
             const snapshot = await getDocs(collection(db, "users"));
-            const users = []; snapshot.forEach(doc => users.push({ uid: doc.id, ...doc.data() })); return users;
-        } catch (error) { return []; }
+            const users = [];
+            snapshot.forEach(doc => users.push({ uid: doc.id, ...doc.data() }));
+            return users;
+        } catch (error) {
+            alert("Sin internet: No puedes ver la lista de alumnos.");
+            return [];
+        }
     },
 
     async grantPremium(uid, dias) {
         const docRef = doc(db, "users", uid);
-        const vencimiento = new Date(); vencimiento.setDate(vencimiento.getDate() + dias);
+        const vencimiento = new Date();
+        vencimiento.setDate(vencimiento.getDate() + dias);
         const fechaStr = vencimiento.toISOString().split('T')[0];
         await updateDoc(docRef, { role: 'premium', premiumHasta: fechaStr });
         return fechaStr;
     },
 
-    async addGlobalTask(taskData) { await addDoc(collection(db, "globalTasks"), taskData); },
+    async resetUserDevice(uid) {
+        const docRef = doc(db, "users", uid);
+        await updateDoc(docRef, { deviceId: "" });
+    },
 
-    // SUBIDA MASIVA ANTI DUPLICADOS
+    async addGlobalTask(taskData) {
+        await addDoc(collection(db, "globalTasks"), taskData);
+    },
+
     async uploadMasterTasks(tasksArray) {
         const batch = writeBatch(db);
         tasksArray.forEach(task => {
@@ -104,10 +151,35 @@ export const Cloud = {
         await batch.commit();
     },
 
+    // NUEVO: Subir Materias con sus descripciones a la Nube de forma atómica
+    async uploadMasterSubjects(subjectsArray) {
+        const docRef = doc(db, "globalSync", "subjectsSync");
+        await setDoc(docRef, { materias: subjectsArray });
+    },
+
     async getGlobalTasks() {
         try {
             const snapshot = await getDocs(collection(db, "globalTasks"));
-            const tasks = []; snapshot.forEach(doc => tasks.push({ globalId: doc.id, ...doc.data() })); return tasks;
-        } catch (error) { return []; }
+            const tasks = [];
+            snapshot.forEach(doc => tasks.push({ globalId: doc.id, ...doc.data() }));
+            return tasks;
+        } catch (error) {
+            console.log("☁️ Modo Offline: No se descargaron tareas de la Nube.");
+            return [];
+        }
+    },
+
+    // NUEVO: Obtener Materias y descripciones de la Nube
+    async getGlobalSubjects() {
+        try {
+            const docSnap = await getDoc(doc(db, "globalSync", "subjectsSync"));
+            if (docSnap.exists()) {
+                return docSnap.data().materias || [];
+            }
+            return [];
+        } catch (error) {
+            console.log("☁️ Modo Offline: No se descargaron las materias de la Nube.");
+            return [];
+        }
     }
 };
