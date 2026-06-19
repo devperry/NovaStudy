@@ -22,7 +22,7 @@ const App = {
         Store.init();
         const savedTheme = localStorage.getItem('top1_theme') || 'default';
         this.cambiarTema(savedTheme);
-
+        
         Cloud.initAuth(
             (userData) => {
                 document.querySelector('.mobile-header').style.display = 'flex';
@@ -51,23 +51,8 @@ const App = {
         );
     },
 
-    // --- NUEVA SINCRONIZACIÓN MÁGICA COMPLETA ---
+    // --- SINCRONIZACIÓN MÁGICA ---
     async sincronizarTareasGlobales() {
-        // 1. Sincronizar Materias y sus Descripciones de la Nube
-        const globalSubjects = await Cloud.getGlobalSubjects();
-        globalSubjects.forEach(gs => {
-            const localMat = Store.state.materias.find(m => m.nombre === gs.nombre);
-            if (!localMat) {
-                // Si la materia no existe localmente, la agregamos con su descripción
-                Store.state.materias.push(gs);
-            } else {
-                // Si existe, le actualizamos la descripción y el color de la nube
-                localMat.descripcion = gs.descripcion || "";
-                localMat.color = gs.color;
-            }
-        });
-
-        // 2. Sincronizar Actividades de la Nube
         const globalTasks = await Cloud.getGlobalTasks();
         let added = 0;
         let updated = false;
@@ -109,7 +94,7 @@ const App = {
                 exists.tipo = gt.tipo;
                 exists.fecha = gt.fecha;
                 exists.dificultad = gt.dificultad;
-                exists.notes = gt.notes; // Evitamos desvío de variables
+                exists.notes = gt.notes;
                 exists.notas = gt.notas;
                 exists.subtareas = nuevasSubtareas;
                 updated = true;
@@ -119,19 +104,6 @@ const App = {
         if (added > 0 || updated) {
             Store.save();
             UI.renderNav(Store.state.materias);
-            this.refrescarVistaActual();
-            console.log(`☁️ Sincronización completa: ${added} Tareas nuevas, y se actualizaron las existentes.`);
-        }
-    },
-
-    // --- NUEVO: EDITAR DESCRIPCIÓN DE MATERIA ---
-    editarMateriaDescripcion() {
-        const nombre = document.getElementById('subject-name-display').innerText;
-        const mat = Store.state.materias.find(m => m.nombre === nombre);
-        const descActual = mat ? (mat.descripcion || "") : "";
-        const nuevaDesc = prompt(`Editar descripción de ${nombre}:`, descActual);
-        if (nuevaDesc !== null) {
-            Store.updateMateriaDescripcion(nombre, nuevaDesc.trim());
             this.refrescarVistaActual();
         }
     },
@@ -276,13 +248,20 @@ const App = {
     },
 
     async subirTareaGlobal() {
+        const elTitulo = document.getElementById('admin-titulo');
+        const elMateria = document.getElementById('admin-materia');
+        const elTipo = document.getElementById('admin-tipo');
+        const elFecha = document.getElementById('admin-fecha');
+        const elDificultad = document.getElementById('admin-dificultad');
+        const elNotas = document.getElementById('admin-notas');
+
         const data = {
-            titulo: document.getElementById('admin-titulo').value,
-            materia: document.getElementById('admin-materia').value,
-            tipo: document.getElementById('admin-tipo').value,
-            fecha: document.getElementById('admin-fecha').value,
-            dificultad: document.getElementById('admin-dificultad').value,
-            notas: document.getElementById('admin-notas').value,
+            titulo: elTitulo ? elTitulo.value : '',
+            materia: elMateria ? elMateria.value : '',
+            tipo: elTipo ? elTipo.value : 'Tarea',
+            fecha: elFecha ? elFecha.value : '',
+            dificultad: elDificultad ? elDificultad.value : 'Medio',
+            notas: elNotas ? elNotas.value : '',
             subtareas: this.adminTempSubtareas 
         };
         if(!data.titulo || !data.materia || !data.fecha) return alert("Llena Título, Materia y Fecha.");
@@ -290,8 +269,8 @@ const App = {
         await Cloud.addGlobalTask(data);
         alert("☁️ ¡Tarea Inyectada a todos los celulares Premium!");
         
-        document.getElementById('admin-titulo').value = '';
-        document.getElementById('admin-notas').value = '';
+        if (elTitulo) elTitulo.value = '';
+        if (elNotas) elNotas.value = '';
         this.adminTempSubtareas = [];
         this.renderAdminSubtareas();
     },
@@ -401,21 +380,32 @@ const App = {
         clickSound.currentTime = 0;
         clickSound.play();
         this.editModeId = id;
+
+        // BINDING SEGURO (Prevenir desajustes de cache del sw.js)
+        const elTitulo = document.getElementById('titulo');
+        const elMateria = document.getElementById('materia-select');
+        const elTipo = document.getElementById('tipo-select');
+        const elFecha = document.getElementById('fecha-input');
+        const elDificultad = document.getElementById('dificultad-select');
+        const elNotas = document.getElementById('notas-input');
+
         if (id) {
             const act = Store.getActividadById(id);
-            document.getElementById('titulo').value = act.titulo; 
-            document.getElementById('materia-select').value = act.materia;
-            document.getElementById('tipo-select').value = act.tipo; 
-            document.getElementById('fecha-input').value = act.fecha;
-            document.getElementById('dificultad-select').value = act.dificultad; 
-            document.getElementById('notes-input').value = act.notas;
-            this.tempSubtareas = act.subtareas ? [...act.subtareas] : [];
+            if (act) {
+                if (elTitulo) elTitulo.value = act.titulo || ''; 
+                if (elMateria) elMateria.value = act.materia || '';
+                if (elTipo) elTipo.value = act.tipo || 'Tarea'; 
+                if (elFecha) elFecha.value = act.fecha || '';
+                if (elDificultad) elDificultad.value = act.dificultad || 'Medio'; 
+                if (elNotas) elNotas.value = act.notas || '';
+                this.tempSubtareas = act.subtareas ? [...act.subtareas] : [];
+            }
         } else {
-            document.getElementById('titulo').value = ''; 
-            document.getElementById('fecha-input').value = ''; 
-            document.getElementById('notes-input').value = '';
+            if (elTitulo) elTitulo.value = ''; 
+            if (elFecha) elFecha.value = ''; 
+            if (elNotas) elNotas.value = '';
             if (this.vistaAnterior !== 'dashboard' && this.vistaAnterior !== 'aspecto' && this.vistaAnterior !== 'premium' && this.vistaAnterior !== 'admin') {
-                document.getElementById('materia-select').value = this.vistaAnterior;
+                if (elMateria) elMateria.value = this.vistaAnterior;
             }
             this.tempSubtareas = [];
         }
@@ -477,7 +467,7 @@ const App = {
             tipo: document.getElementById('tipo-select').value, 
             fecha, 
             dificultad: document.getElementById('dificultad-select').value, 
-            notas: document.getElementById('notes-input').value,
+            notas: document.getElementById('notas-input').value,
             subtareas: this.tempSubtareas
         };
         Store.guardarActividad(data, this.editModeId);
