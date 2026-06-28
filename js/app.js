@@ -54,6 +54,10 @@ const App = {
     // --- SINCRONIZACIÓN MÁGICA (CORREGIDA) ---
     async sincronizarTareasGlobales() {
         const globalTasks = await Cloud.getGlobalTasks();
+
+        // Sin conexión: no tocamos nada local para no perder tareas globales por error.
+        if (globalTasks === null) return;
+
         let added = 0;
         let updated = false;
         
@@ -103,12 +107,22 @@ const App = {
                 updated = true;
             }
         });
+
+        // 3. FIX BUG: Si el Admin eliminó una tarea global en Firebase (fin de bimestre,
+        // limpieza, JSON nuevo), la quitamos también del celular. Antes esto no pasaba,
+        // por lo que la limpieza local de 7 días la borraba y esta misma función la
+        // volvía a inyectar como nueva (completada:false) en cada sincronización,
+        // haciendo que pareciera "desmarcarse y persistir" para siempre.
+        const idsEnNube = new Set(globalTasks.map(gt => gt.globalId));
+        const totalAntes = Store.state.actividades.length;
+        Store.state.actividades = Store.state.actividades.filter(a => !a.globalId || idsEnNube.has(a.globalId));
+        const removidas = totalAntes - Store.state.actividades.length;
        
-        if (added > 0 || updated) {
+        if (added > 0 || updated || removidas > 0) {
             Store.save();
             UI.renderNav(Store.state.materias);
             this.refrescarVistaActual();
-            console.log(`☁️ Sincronización completa: ${added} Tareas nuevas, y se actualizaron las existentes.`);
+            console.log(`☁️ Sincronización completa: ${added} nuevas, ${removidas} eliminadas (ya no están en la nube), y se actualizaron las existentes.`);
         }
     },
 
@@ -190,6 +204,7 @@ const App = {
         if (tab === 'tasks') {
             this.adminTempSubtareas = [];
             this.renderAdminSubtareas();
+            this.loadAdminGlobalTasksList();
         }
     },
 
@@ -210,6 +225,7 @@ const App = {
                 <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
                     <button onclick="app.darPremium('${u.uid}', 7)" style="flex:1; background:#3b82f6; color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold;">+ 7 Días</button>
                     <button onclick="app.darPremium('${u.uid}', 30)" style="flex:1; background:#fbbf24; color:black; border:none; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold;">+ 30 Días</button>
+                    ${u.role === 'premium' ? `<button onclick="app.quitarPremium('${u.uid}')" style="width:100%; background:#6b7280; color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold;"><i class="fas fa-user-minus"></i> Quitar Premium</button>` : ''}
                     <button onclick="app.resetDevice('${u.uid}')" style="width:100%; margin-top:5px; background:var(--danger); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; font-weight:bold;"><i class="fas fa-mobile-alt"></i> Reset Celular</button>
                 </div>
             </div>
@@ -220,6 +236,15 @@ const App = {
         if (confirm(`¿Dar ${dias} días de Premium a este usuario?`)) {
             const nuevaFecha = await Cloud.grantPremium(uid, dias);
             alert(`✅ Premium activado hasta: ${nuevaFecha}`);
+            this.loadAdminUsers();
+        }
+    },
+
+    // NUEVO: Quitar Premium manualmente (vuelve a plan 'free' de inmediato)
+    async quitarPremium(uid) {
+        if (confirm("¿Quitar Premium a este usuario? Pasará a plan gratuito de inmediato.")) {
+            await Cloud.revokePremium(uid);
+            alert("✅ Premium removido. El usuario ahora es free.");
             this.loadAdminUsers();
         }
     },
@@ -263,6 +288,51 @@ const App = {
         this.renderAdminSubtareas();
     },
 
+    // --- NUEVO: GESTIÓN/BORRADO DE TAREAS GLOBALES ---
+    async loadAdminGlobalTasksList() {
+        const list = document.getElementById('admin-global-tasks-list');
+        if (!list) return;
+        list.innerHTML = "<p style='color:var(--text-muted);'>Cargando tareas globales...</p>";
+
+        const tasks = await Cloud.getGlobalTasks();
+
+        if (tasks === null) {
+            list.innerHTML = "<p style='color:var(--danger); font-weight:bold;'>📡 Sin conexión: no se pudo cargar la lista.</p>";
+            return;
+        }
+        if (tasks.length === 0) {
+            list.innerHTML = "<p style='color:var(--text-muted);'>No hay tareas globales activas en la nube.</p>";
+            return;
+        }
+
+        list.innerHTML = tasks.map(t => `
+            <div class="card" style="margin-bottom:8px; padding:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                    <div style="overflow:hidden;">
+                        <strong style="display:block; overflow:hidden; text-overflow:ellipsis;">${t.titulo}</strong>
+                        <p style="margin:3px 0 0; font-size:0.8rem; color:var(--text-muted);">${t.materia} • ${t.tipo} • 📅 ${t.fecha || 'sin fecha'}</p>
+                    </div>
+                    <button onclick="app.eliminarTareaGlobal('${t.globalId}')" style="flex-shrink:0; background:var(--danger); color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    async eliminarTareaGlobal(globalId) {
+        if (!confirm("¿Eliminar esta tarea global? Se quitará de todos los celulares en su próxima sincronización.")) return;
+        await Cloud.deleteGlobalTask(globalId);
+        this.loadAdminGlobalTasksList();
+    },
+
+    async eliminarTodasTareasGlobales() {
+        if (!confirm("⚠️ Esto eliminará TODAS las tareas globales de la nube. Todas las cuentas Premium las perderán al sincronizar. ¿Continuar?")) return;
+        if (!confirm("Última confirmación: ¿BORRAR TODO de una sola vez? Esta acción no se puede deshacer.")) return;
+
+        const cantidad = await Cloud.deleteAllGlobalTasks();
+        alert(`🗑️ Se eliminaron ${cantidad} tareas globales de la nube.`);
+        this.loadAdminGlobalTasksList();
+    },
+
     async subirTareaGlobal() {
         const data = {
             titulo: document.getElementById('admin-titulo').value,
@@ -282,6 +352,7 @@ const App = {
         document.getElementById('admin-notas').value = '';
         this.adminTempSubtareas = [];
         this.renderAdminSubtareas();
+        this.loadAdminGlobalTasksList();
     },
 
     // --- PAYWALL Y PERFIL ---
@@ -373,7 +444,7 @@ const App = {
             document.getElementById('subject-name-display').innerText = subjectName;
             this.materiaFiltroCompletadas = false;
             UI.actualizarBotonesFiltro(this.materiaFiltroCompletadas);
-            this.renderSubjectDetail(subjectName, Store.state.materias, Store.getPromedio(subjectName));
+            this.renderSubjectDetail(subjectName);
             this.toggleMenu(true);
         } else if (viewId === 'dashboard') {
             document.getElementById('global-search').value = ''; this.renderDashboard(); this.toggleMenu(true);
@@ -487,7 +558,7 @@ const App = {
     // --- ACCIONES GENERALES ---
     agregarMateria() { const n = prompt("Nombre de la nueva materia:"); if (Store.addMateria(n)) { UI.renderNav(Store.state.materias); UI.renderSelectMaterias(Store.state.materias); } },
     realizarBusqueda() { this.renderDashboard(document.getElementById('global-search').value.toLowerCase()); },
-    setFiltroMateria(ver) { this.materiaFiltroCompletadas = ver; UI.actualizarBotonesFiltro(ver); this.renderSubjectDetail(document.getElementById('subject-name-display').innerText, Store.state.materias, Store.getPromedio(document.getElementById('subject-name-display').innerText)); },
+    setFiltroMateria(ver) { this.materiaFiltroCompletadas = ver; UI.actualizarBotonesFiltro(ver); this.renderSubjectDetail(document.getElementById('subject-name-display').innerText); },
 
     toggleCompletada(id) { 
         const act = Store.getActividadById(id);
@@ -524,7 +595,7 @@ const App = {
     toggleDetalles(id) { const el = document.getElementById(`detalles-${id}`); el.style.display = el.style.display === 'block' ? 'none' : 'block'; },
     
     renderDashboard(q = "") { UI.renderDashboard(Store.getDashboardActividades(q), Store.state.materias); },
-    renderSubjectDetail(m) { UI.renderSubjectDetail(Store.getSubjectActividades(m, this.materiaFiltroCompletadas), Store.state.materias, Store.getPromedio(m)); },
+    renderSubjectDetail(m) { UI.renderSubjectDetail(Store.getSubjectActividades(m, this.materiaFiltroCompletadas), Store.state.materias); },
     
     refrescarVistaActual() {
         if (['dashboard', 'aspecto', 'premium', 'admin'].includes(this.vistaAnterior)) this.realizarBusqueda();
@@ -590,6 +661,7 @@ const App = {
 
                 alert("☁️ ¡ARCHIVO MAESTRO SUBIDO! Sincronización masiva completada.");
                 fileInput.value = '';
+                this.loadAdminGlobalTasksList();
             } catch (err) { alert("❌ Error procesando el JSON maestro."); }
         };
         reader.readAsText(file);

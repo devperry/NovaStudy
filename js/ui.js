@@ -15,7 +15,7 @@ export const UI = {
         container.innerHTML = actividades.map(a => this.createCard(a, materiasStore)).join('');
     },
 
-    renderSubjectDetail(actividades, materiasStore, promedio) {
+    renderSubjectDetail(actividades, materiasStore) {
         // NUEVO: Renderizar descripción de la materia
         const subjectName = document.getElementById('subject-name-display').innerText;
         const mat = materiasStore.find(m => m.nombre === subjectName);
@@ -30,10 +30,6 @@ export const UI = {
                 descDisplay.style.display = 'none';
             }
         }
-
-        const avgDisplay = document.querySelector('#subject-average span');
-        if(promedio) { avgDisplay.innerText = promedio; document.getElementById('subject-average').style.display = 'flex'; } 
-        else { document.getElementById('subject-average').style.display = 'none'; }
 
         document.getElementById('subject-exams').innerHTML = actividades.filter(a => a.tipo === 'Examen').map(a => this.createCard(a, materiasStore)).join('');
         document.getElementById('subject-tasks').innerHTML = actividades.filter(a => a.tipo === 'Tarea').map(a => this.createCard(a, materiasStore)).join('');

@@ -184,9 +184,6 @@
                 <!-- NUEVO: Contenedor para mostrar la descripción de la materia -->
                 <p id="subject-desc-display" style="color:var(--text-muted); font-size:0.95rem; margin:10px 0 0 0; white-space: pre-wrap; display:none;"></p>
             </div>
-            <div id="subject-average" class="average-badge">
-                <i class="fas fa-chart-line"></i> Promedio: <span>--</span>
-            </div>
         </div>
             
         <div class="filter-tabs" style="margin-top:20px;">
@@ -255,6 +252,17 @@
 
         <!-- PESTAÑA: SUBIR TAREAS GLOBALES -->
         <div id="admin-tasks-sec" style="display:none;">
+            <!-- NUEVO: GESTIÓN Y BORRADO DE TAREAS GLOBALES -->
+            <div class="card" style="border: 2px solid var(--danger); margin-bottom: 20px;">
+                <h3 style="color:var(--danger); margin-top:0;"><i class="fas fa-cloud"></i> Tareas Globales Activas</h3>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:15px;">Bórralas aquí al cerrar el bimestre o antes de subir un JSON limpio, en vez de hacerlo una por una en Firebase.</p>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <button class="btn-massive" style="margin:0; background:var(--bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="app.loadAdminGlobalTasksList()">🔄 Recargar</button>
+                    <button class="btn-massive" style="margin:0; background:var(--danger);" onclick="app.eliminarTodasTareasGlobales()">🗑️ Eliminar TODAS</button>
+                </div>
+                <div id="admin-global-tasks-list"></div>
+            </div>
+
             <!-- OPCIÓN 1: MANUAL -->
             <div class="card" style="border: 2px solid var(--primary); margin-bottom: 20px;">
                 <h3>Subir Tarea Rápida a Premium</h3>

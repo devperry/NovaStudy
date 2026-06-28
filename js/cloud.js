@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, addDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, addDoc, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAE49hGAMj5ZnoOtN1tZjNilbUrGnZS2WM",
@@ -133,6 +133,12 @@ export const Cloud = {
         return fechaStr;
     },
 
+    // NUEVO: Quitar Premium manualmente desde el panel admin
+    async revokePremium(uid) {
+        const docRef = doc(db, "users", uid);
+        await updateDoc(docRef, { role: 'free', premiumHasta: null });
+    },
+
     async resetUserDevice(uid) {
         const docRef = doc(db, "users", uid);
         await updateDoc(docRef, { deviceId: "" });
@@ -140,6 +146,22 @@ export const Cloud = {
 
     async addGlobalTask(taskData) {
         await addDoc(collection(db, "globalTasks"), taskData);
+    },
+
+    // NUEVO: Eliminar UNA tarea global puntual desde el panel admin
+    async deleteGlobalTask(globalId) {
+        await deleteDoc(doc(db, "globalTasks", globalId));
+    },
+
+    // NUEVO: Eliminar TODAS las tareas globales de golpe (fin de bimestre / JSON limpio)
+    // Reemplaza el borrado manual uno por uno en la consola de Firebase.
+    async deleteAllGlobalTasks() {
+        const snapshot = await getDocs(collection(db, "globalTasks"));
+        if (snapshot.empty) return 0;
+        const batch = writeBatch(db);
+        snapshot.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+        return snapshot.size;
     },
 
     async uploadMasterTasks(tasksArray) {
@@ -165,7 +187,11 @@ export const Cloud = {
             return tasks;
         } catch (error) {
             console.log("☁️ Modo Offline: No se descargaron tareas de la Nube.");
-            return [];
+            // IMPORTANTE: devolvemos null (no []) para diferenciar "sin conexión"
+            // de "no hay tareas globales". Si devolviéramos [], la sincronización
+            // pensaría que el Admin borró todo y eliminaría las tareas globales
+            // locales de cualquier usuario que esté offline.
+            return null;
         }
     },
 
