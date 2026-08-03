@@ -19,31 +19,36 @@ export const Store = {
     },
 
     // Auto-limpieza: borra Tareas/Examenes/Apuntes atrasados +7 días (sin excepciones de tipo o nota)
-    ejecutarLimpiezaAutomatica() {
-        const hoy = new Date();
-        hoy.setHours(0,0,0,0);
-        const totalAntes = this.state.actividades.length;
-
-        this.state.actividades = this.state.actividades.filter(a => {
-            // Las tareas globales (de la nube) NO se autoborran localmente: su ciclo de vida
-            // lo controla el Admin desde el Panel/Firebase. Si se borran allí, se quitan
-            // del celular en la próxima sincronización (ver sincronizarTareasGlobales en app.js).
-            if (a.globalId) return true;
-
-            if (!a.fecha) return true; // Tareas sin fecha no se borran
-
-            const fechaT = new Date(a.fecha + 'T00:00:00');
-            const diffDias = Math.ceil((fechaT - hoy) / (1000 * 60 * 60 * 24));
-
-            // Se elimina si está atrasada por más de 7 días, sea Tarea, Examen o Apunte
-            return diffDias >= -7;
-        });
-
-        if (totalAntes !== this.state.actividades.length) {
-            this.save();
-            console.log(`🧹 Limpieza automática ejecutada: Se eliminaron ${totalAntes - this.state.actividades.length} actividades atrasadas (+7 días).`);
+    async ejecutarLimpiezaAutomatica() {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const totalAntes = this.state.actividades.length;
+    
+    const globalIdsABorrar = [];
+    
+    this.state.actividades = this.state.actividades.filter(a => {
+        if (!a.fecha) return true; // Tareas sin fecha no se borran
+        
+        const fechaT = new Date(a.fecha + 'T00:00:00');
+        const diffDias = Math.ceil((fechaT - hoy) / (1000 * 60 * 60 * 24));
+        
+        // Se elimina si está atrasada por más de 7 días (sea local o global)
+        if (diffDias < -7) {
+            if (a.globalId) {
+                globalIdsABorrar.push(a.globalId);
+            }
+            return false;
         }
-    },
+        return true;
+    });
+    
+    if (totalAntes !== this.state.actividades.length) {
+        this.save();
+        console.log(`🧹 Limpieza local: ${totalAntes - this.state.actividades.length} actividades atrasadas (+7 días) eliminadas.`);
+    }
+    
+    return globalIdsABorrar;
+},
 
     addMateria(nombre, descripcion = "") {
         if (!nombre) return false;

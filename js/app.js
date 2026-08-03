@@ -22,6 +22,7 @@ const App = {
         Store.init();
         const savedTheme = localStorage.getItem('top1_theme') || 'default';
         this.cambiarTema(savedTheme);
+        this.limpiarTareasAtrasadas();
         //Funcion Para iniciar el auth
         Cloud.initAuth(
             (userData) => {
@@ -124,6 +125,7 @@ const App = {
             this.refrescarVistaActual();
             console.log(`☁️ Sincronización completa: ${added} nuevas, ${removidas} eliminadas (ya no están en la nube), y se actualizaron las existentes.`);
         }
+        this.limpiarTareasAtrasadas();
     },
 
     // --- NUEVO: EDITAR DESCRIPCIÓN DE MATERIA ---
@@ -643,6 +645,20 @@ const App = {
         };
         reader.readAsText(file);
     },
+
+async limpiarTareasAtrasadas() {
+    const globalIdsABorrar = await Store.ejecutarLimpiezaAutomatica();
+    if (globalIdsABorrar.length > 0) {
+        for (const gid of globalIdsABorrar) {
+            try {
+                await Cloud.deleteGlobalTask(gid);
+            } catch (e) {
+                console.warn(`No se pudo borrar la tarea global ${gid} de la nube:`, e);
+            }
+        }
+        console.log(`☁️ ${globalIdsABorrar.length} tareas globales atrasadas eliminadas de la nube.`);
+    }
+},
 
     // Sincronización masiva de plantillas
     async subirMasterJSON() {
