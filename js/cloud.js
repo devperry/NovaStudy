@@ -165,13 +165,18 @@ export const Cloud = {
     },
 
     async uploadMasterTasks(tasksArray) {
-        const batch = writeBatch(db);
-        tasksArray.forEach(task => {
-            const docRef = doc(db, "globalTasks", String(task.id)); 
-            batch.set(docRef, task);
-        });
-        await batch.commit();
-    },
+    const batch = writeBatch(db);
+    tasksArray.forEach(task => {
+        // El "completada" y "calificacion" son personales, no se sincronizan a la nube
+        const cleanTask = { ...task };
+        delete cleanTask.completada;
+        delete cleanTask.calificacion;
+        
+        const docRef = doc(db, "globalTasks", String(task.id)); 
+        batch.set(docRef, cleanTask);
+    });
+    await batch.commit();
+},
 
     // NUEVO: Subir Materias con sus descripciones a la Nube de forma atómica
     async uploadMasterSubjects(subjectsArray) {

@@ -54,77 +54,90 @@ const App = {
 
     // --- SINCRONIZACIÓN MÁGICA (CORREGIDA) ---
     async sincronizarTareasGlobales() {
-        const globalTasks = await Cloud.getGlobalTasks();
+const globalTasks = await Cloud.getGlobalTasks();
+    if (globalTasks === null) return;
 
-        // Sin conexión: no tocamos nada local para no perder tareas globales por error.
-        if (globalTasks === null) return;
-
-        let added = 0;
-        let updated = false;
+    let added = 0;
+    let updated = false;
+    let removidas = 0;
+    
+    const norm = (s) => String(s || '').trim().toLowerCase();
+    
+    globalTasks.forEach(gt => {
+        if (!gt || !gt.globalId) return;
         
-        globalTasks.forEach(gt => {
-            // Buscamos si la tarea ya existe en el celular de forma segura
-            const exists = Store.state.actividades.find(a => 
-                a.globalId === gt.globalId || 
-                (a.titulo.trim().toLowerCase() === gt.titulo.trim().toLowerCase() && a.materia === gt.materia)
-            );
-
-            if (!exists) {
-                // 1. SI NO EXISTE: Inyectamos como tarea totalmente nueva
-                Store.state.actividades.push({
-                    id: Date.now() + Math.random(), 
-                    globalId: gt.globalId, 
-                    titulo: gt.titulo,
-                    materia: gt.materia,
-                    tipo: gt.tipo,
-                    fecha: gt.fecha,
-                    dificultad: gt.dificultad,
-                    notas: gt.notas,
-                    completada: false,
-                    calificacion: null,
-                    subtareas: gt.subtareas || [] 
-                });
-                Store.addMateria(gt.materia);
-                added++;
-            } else {
-                // 2. SI YA EXISTE: Actualizamos con los cambios del Admin (Smart Update)
-                const nuevasSubtareas = (gt.subtareas || []).map(nuevaSub => {
-                    const viejaSub = (exists.subtareas || []).find(s => s.texto === nuevaSub.texto);
-                    return {
-                        texto: nuevaSub.texto,
-                        completada: viejaSub ? viejaSub.completada : false
-                    };
-                });
-
-                exists.globalId = gt.globalId;
-                exists.titulo = gt.titulo;
-                exists.materia = gt.materia;
-                exists.tipo = gt.tipo;
-                exists.fecha = gt.fecha;
-                exists.dificultad = gt.dificultad;
-                exists.notes = gt.notes;
-                exists.notas = gt.notas;
-                exists.subtareas = nuevasSubtareas;
-                updated = true;
-            }
-        });
-
-        // 3. FIX BUG: Si el Admin eliminó una tarea global en Firebase (fin de bimestre,
-        // limpieza, JSON nuevo), la quitamos también del celular. Antes esto no pasaba,
-        // por lo que la limpieza local de 7 días la borraba y esta misma función la
-        // volvía a inyectar como nueva (completada:false) en cada sincronización,
-        // haciendo que pareciera "desmarcarse y persistir" para siempre.
-        const idsEnNube = new Set(globalTasks.map(gt => gt.globalId));
-        const totalAntes = Store.state.actividades.length;
-        Store.state.actividades = Store.state.actividades.filter(a => !a.globalId || idsEnNube.has(a.globalId));
-        const removidas = totalAntes - Store.state.actividades.length;
-       
-        if (added > 0 || updated || removidas > 0) {
-            Store.save();
-            UI.renderNav(Store.state.materias);
-            this.refrescarVistaActual();
-            console.log(`☁️ Sincronización completa: ${added} nuevas, ${removidas} eliminadas (ya no están en la nube), y se actualizaron las existentes.`);
+        // 1) MATCH POR globalId (más confiable)
+        let exists = Store.state.actividades.find(a => a.globalId === gt.globalId);
+        
+        // 2) FALLBACK: match por título + materia (case-insensitive, trimmed)
+        if (!exists && gt.titulo) {
+            const gtTitulo = norm(gt.titulo);
+            const gtMateria = norm(gt.materia);
+            exists = Store.state.actividades.find(a => {
+                if (!a.titulo) return false;
+                return norm(a.titulo) === gtTitulo && norm(a.materia) === gtMateria;
+            });
         }
+
+        if (!exists) {
+            // TAREA NUEVA - se permite completada: false solo aquí
+            Store.state.actividades.push({
+                id: Date.now() + Math.random(), 
+                globalId: gt.globalId, 
+                titulo: gt.titulo,
+                materia: gt.materia,
+                tipo: gt.tipo,
+                fecha: gt.fecha,
+                dificultad: gt.dificultad,
+                notas: gt.notas,
+                completada: false,
+                calificacion: null,
+                subtareas: (gt.subtareas || []).map(s => ({
+                    texto: typeof s === 'string' ? s : (s.texto || ''),
+                    completada: false
+                }))
+            });
+            Store.addMateria(gt.materia);
+            added++;
+        } else {
+            // SMART UPDATE - PRESERVAR completada y calificacion LOCALES
+            const nuevasSubtareas = (gt.subtareas || []).map(nuevaSub => {
+                const nuevaTexto = typeof nuevaSub === 'string' ? nuevaSub : (nuevaSub.texto || '');
+                const viejaSub = (exists.subtareas || []).find(s => s.texto === nuevaTexto);
+                return {
+                    texto: nuevaTexto,
+                    completada: viejaSub ? viejaSub.completada : false
+                };
+            });
+
+            // Actualizar metadatos. El globalId se actualiza al de la nube
+            // para que pase el filtro de abajo. ⛔ NUNCA tocar completada ni calificacion.
+            exists.globalId = gt.globalId;
+            exists.titulo = gt.titulo;
+            exists.materia = gt.materia;
+            exists.tipo = gt.tipo;
+            exists.fecha = gt.fecha;
+            exists.dificultad = gt.dificultad;
+            exists.notas = gt.notas;
+            exists.subtareas = nuevasSubtareas;
+            updated = true;
+        }
+    });
+
+    // ✅ Eliminar locales que ya no están en la nube.
+    // Como el matching de arriba ya actualizó los globalIds,
+    // las tareas que se mantienen son las correctas.
+    const idsEnNube = new Set(globalTasks.map(gt => gt.globalId));
+    const totalAntes = Store.state.actividades.length;
+    Store.state.actividades = Store.state.actividades.filter(a => !a.globalId || idsEnNube.has(a.globalId));
+    removidas = totalAntes - Store.state.actividades.length;
+   
+    if (added > 0 || updated || removidas > 0) {
+        Store.save();
+        UI.renderNav(Store.state.materias);
+        this.refrescarVistaActual();
+        console.log(`☁️ Sync: ${added} nuevas, ${removidas} eliminadas, existentes actualizadas (completada preservada).`);
+    }
         this.limpiarTareasAtrasadas();
     },
 
