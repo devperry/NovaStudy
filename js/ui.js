@@ -16,7 +16,7 @@ export const UI = {
     },
 
     renderSubjectDetail(actividades, materiasStore) {
-        // NUEVO: Renderizar descripción de la materia
+      
         const subjectName = document.getElementById('subject-name-display').innerText;
         const mat = materiasStore.find(m => m.nombre === subjectName);
         const descDisplay = document.getElementById('subject-desc-display');
