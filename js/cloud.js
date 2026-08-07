@@ -199,6 +199,10 @@ export const Cloud = {
             return null;
         }
     },
+        async updateGlobalTask(globalId, taskData) {
+        const docRef = doc(db, "globalTasks", globalId);
+        await updateDoc(docRef, taskData);
+    },
 
     // NUEVO: Obtener Materias y descripciones de la Nube
     async getGlobalSubjects() {

@@ -265,9 +265,13 @@
 
             <!-- OPCIÓN 1: MANUAL -->
             <div class="card" style="border: 2px solid var(--primary); margin-bottom: 20px;">
-                <h3>Subir Tarea Rápida a Premium</h3>
+                <h3 id="admin-form-title">Subir Tarea Rápida a Premium</h3>
                 <input type="text" id="admin-titulo" class="big-control" placeholder="Ej: Examen Bimestral" style="margin-bottom:10px;">
-                <input type="text" id="admin-materia" class="big-control" placeholder="Nombre de la Materia" style="margin-bottom:10px;">
+                
+               <select id="admin-materia-select" class="big-control" style="margin-bottom:10px;">
+    <option value="" disabled selected>-- Selecciona una Materia --</option>
+</select>
+
                 <select id="admin-tipo" class="big-control" style="margin-bottom:10px;"><option value="Tarea">Tarea</option><option value="Examen">Examen</option><option value="Otro">Otro</option></select>
                 <input type="date" id="admin-fecha" class="big-control" style="margin-bottom:10px;">
                 <select id="admin-dificultad" class="big-control" style="margin-bottom:10px;"><option value="Fácil">Fácil</option><option value="Medio" selected>Medio</option><option value="Difícil">Difícil</option></select>
@@ -281,7 +285,8 @@
                         <button onclick="app.agregarAdminSubtarea()" style="background: var(--border-color); color: var(--text-main); border: none; border-radius: 8px; padding: 0 18px; font-weight: bold; cursor: pointer; font-size: 1.2rem;">+</button>
                     </div>
                 </div>
-                <button class="btn-massive" style="background:var(--primary); margin:0;" onclick="app.subirTareaGlobal()">☁️ Inyectar Tarea</button>
+<button id="admin-form-btn" class="btn-massive" style="background:var(--primary); margin:0;" onclick="app.subirTareaGlobal()">☁️ Inyectar Tarea</button>
+
             </div>
 
             <!-- OPCIÓN 2: MASIVA -->

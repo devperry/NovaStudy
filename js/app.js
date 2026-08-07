@@ -16,7 +16,8 @@ const App = {
     vistaAnterior: 'dashboard', 
     materiaFiltroCompletadas: false,
     tempSubtareas: [],        // Memoria para formulario privado
-    adminTempSubtareas: [],   // Memoria para formulario Admin
+        adminTempSubtareas: [],   // Memoria para formulario Admin
+    adminEditGlobalId: null  // ID de tarea global en edición (null = modo creación)
 
     init() {
         Store.init();
@@ -216,11 +217,14 @@ const globalTasks = await Cloud.getGlobalTasks();
         document.getElementById('admin-tasks-sec').style.display = tab === 'tasks' ? 'block' : 'none';
         
         if (tab === 'users') this.loadAdminUsers();
-        if (tab === 'tasks') {
+                if (tab === 'tasks') {
             this.adminTempSubtareas = [];
             this.renderAdminSubtareas();
+            this.renderAdminMateriasSelect();
             this.loadAdminGlobalTasksList();
+            this.resetAdminForm();
         }
+
     },
 
     async loadAdminUsers() {
@@ -287,6 +291,31 @@ const globalTasks = await Cloud.getGlobalTasks();
             </div>
         `).join('');
     },
+        renderAdminMateriasSelect() {
+        const select = document.getElementById('admin-materia-select');
+        if (!select) return;
+        const currentVal = select.value;
+        select.innerHTML = '<option value="" disabled>-- Selecciona una Materia --</option>';
+        
+        if (Store.state.materias.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = "";
+            opt.disabled = true;
+            opt.selected = true;
+            opt.textContent = "No hay materias cargadas";
+            select.appendChild(opt);
+            return;
+        }
+        
+        Store.state.materias.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.nombre;
+            opt.textContent = m.nombre;
+            select.appendChild(opt);
+        });
+        
+        if (currentVal) select.value = currentVal;
+    },
 
     agregarAdminSubtarea() {
         const input = document.getElementById('admin-subtask-input');
@@ -327,7 +356,9 @@ const globalTasks = await Cloud.getGlobalTasks();
                         <strong style="display:block; overflow:hidden; text-overflow:ellipsis;">${t.titulo}</strong>
                         <p style="margin:3px 0 0; font-size:0.8rem; color:var(--text-muted);">${t.materia} • ${t.tipo} • 📅 ${t.fecha || 'sin fecha'}</p>
                     </div>
+                    <button onclick="app.cargarEdicionGlobal('${t.globalId}')" style="flex-shrink:0; background:var(--primary); color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; margin-right:8px;"><i class="fas fa-pencil-alt"></i></button>
                     <button onclick="app.eliminarTareaGlobal('${t.globalId}')" style="flex-shrink:0; background:var(--danger); color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+
                 </div>
             </div>
         `).join('');
@@ -347,11 +378,68 @@ const globalTasks = await Cloud.getGlobalTasks();
         alert(`🗑️ Se eliminaron ${cantidad} tareas globales de la nube.`);
         this.loadAdminGlobalTasksList();
     },
+        async cargarEdicionGlobal(globalId) {
+        const tasks = await Cloud.getGlobalTasks();
+        if (!tasks) return alert("No se pudieron cargar las tareas de la nube.");
+        
+        const tarea = tasks.find(t => t.globalId === globalId);
+        if (!tarea) return alert("Tarea no encontrada.");
+        
+        // Rellenar formulario
+        document.getElementById('admin-titulo').value = tarea.titulo || '';
+        document.getElementById('admin-tipo').value = tarea.tipo || 'Tarea';
+        document.getElementById('admin-fecha').value = tarea.fecha || '';
+        document.getElementById('admin-dificultad').value = tarea.dificultad || 'Medio';
+        document.getElementById('admin-notas').value = tarea.notas || '';
+        
+        // Asegurar que la materia exista en el select y seleccionarla
+        this.renderAdminMateriasSelect();
+        const selectMateria = document.getElementById('admin-materia-select');
+        if (selectMateria) {
+            // Si la materia no está en el select local, la agregamos temporalmente
+            if (!Array.from(selectMateria.options).some(o => o.value === tarea.materia)) {
+                const opt = document.createElement('option');
+                opt.value = tarea.materia;
+                opt.textContent = tarea.materia;
+                selectMateria.appendChild(opt);
+            }
+            selectMateria.value = tarea.materia;
+        }
+        
+        // Cargar subtareas
+        this.adminTempSubtareas = (tarea.subtareas || []).map(s => ({
+            texto: typeof s === 'string' ? s : (s.texto || ''),
+            completada: false
+        }));
+        this.renderAdminSubtareas();
+        
+        // Cambiar a modo edición
+        this.adminEditGlobalId = globalId;
+        document.getElementById('admin-form-title').innerText = '✏️ Editar Tarea Global';
+        document.getElementById('admin-form-btn').innerText = '💾 Actualizar Tarea Global';
+        
+        // Scroll suave al formulario
+        document.getElementById('admin-titulo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
 
-    async subirTareaGlobal() {
+    resetAdminForm() {
+        this.adminEditGlobalId = null;
+        document.getElementById('admin-titulo').value = '';
+        document.getElementById('admin-notas').value = '';
+        document.getElementById('admin-fecha').value = '';
+        const selectMateria = document.getElementById('admin-materia-select');
+        if (selectMateria) selectMateria.value = "";
+        this.adminTempSubtareas = [];
+        this.renderAdminSubtareas();
+        document.getElementById('admin-form-title').innerText = 'Subir Tarea Rápida a Premium';
+        document.getElementById('admin-form-btn').innerText = '☁️ Inyectar Tarea';
+    },
+
+
+        async subirTareaGlobal() {
         const data = {
             titulo: document.getElementById('admin-titulo').value,
-            materia: document.getElementById('admin-materia').value,
+            materia: document.getElementById('admin-materia-select').value,
             tipo: document.getElementById('admin-tipo').value,
             fecha: document.getElementById('admin-fecha').value,
             dificultad: document.getElementById('admin-dificultad').value,
@@ -360,15 +448,20 @@ const globalTasks = await Cloud.getGlobalTasks();
         };
         if(!data.titulo || !data.materia || !data.fecha) return alert("Llena Título, Materia y Fecha.");
         
-        await Cloud.addGlobalTask(data);
-        alert("☁️ ¡Tarea Inyectada a todos los celulares Premium!");
+        if (this.adminEditGlobalId) {
+            // MODO EDICIÓN
+            await Cloud.updateGlobalTask(this.adminEditGlobalId, data);
+            alert("✏️ ¡Tarea Global actualizada! Se sincronizará en todos los celulares Premium.");
+        } else {
+            // MODO CREACIÓN
+            await Cloud.addGlobalTask(data);
+            alert("☁️ ¡Tarea Inyectada a todos los celulares Premium!");
+        }
         
-        document.getElementById('admin-titulo').value = '';
-        document.getElementById('admin-notas').value = '';
-        this.adminTempSubtareas = [];
-        this.renderAdminSubtareas();
+        this.resetAdminForm();
         this.loadAdminGlobalTasksList();
     },
+
 
     // --- PAYWALL Y PERFIL ---
     renderPremium() {
