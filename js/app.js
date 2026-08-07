@@ -31,7 +31,12 @@ const App = {
                 UI.renderNav(Store.state.materias);
                 UI.renderSelectMaterias(Store.state.materias);
                 this.updateProfileUI(); 
-
+                if (userData.role !== 'premium' && userData.role !== 'admin') {
+            const temaGuardado = localStorage.getItem('top1_theme') || 'default';
+            if (temaGuardado !== 'default') {
+                this.cambiarTema('default');
+            }
+        }
                 if (userData.role === 'admin') {
                     document.getElementById('nav-admin-btn').style.display = 'flex';
                 }
@@ -525,6 +530,14 @@ const globalTasks = await Cloud.getGlobalTasks();
         if (user.role === 'admin') { badge.innerText = '🛡️ ADMIN SUPREMO'; badge.classList.add('admin'); } 
         else if (user.role === 'premium') { badge.innerText = '👑 PREMIUM VIP'; badge.classList.add('premium'); } 
         else { badge.innerText = '🛑 PLAN GRATUITO'; badge.classList.add('free'); }
+        const btnAspecto = document.getElementById('btn-aspecto-menu');
+    if (btnAspecto) {
+        const esPremium = user.role === 'premium' || user.role === 'admin';
+        btnAspecto.innerHTML = esPremium
+            ? `<i class="fas fa-palette" style="color:#8b5cf6;"></i> Personalizar Aspecto`
+            : `<i class="fas fa-lock" style="color:#8b5cf6;"></i> Personalizar Aspecto <span style="margin-left:auto; font-size:0.7rem; color:#fbbf24;">👑 VIP</span>`;
+    }
+    
     },
 
     eliminarMateriaActual() {
@@ -539,10 +552,30 @@ const globalTasks = await Cloud.getGlobalTasks();
         clickSound.play();
     },
 
-    // --- NAVEGACIÓN Y VISTAS ---
-    cambiarTema(themeName) { document.body.setAttribute('data-theme', themeName); localStorage.setItem('top1_theme', themeName); },
+cambiarTema(themeName) {
+    // NUEVO: si no es premium/admin, forzar tema default (excepto durante el arranque, 
+    // cuando Cloud.userData aún no existe)
+    if (Cloud.userData && themeName !== 'default') {
+        const role = Cloud.userData.role;
+        if (role !== 'premium' && role !== 'admin') {
+            themeName = 'default';
+        }
+    }
+    document.body.setAttribute('data-theme', themeName);
+    localStorage.setItem('top1_theme', themeName);
+},
     toggleMenu(forceClose = false) { const s = document.getElementById('sidebar'); if (forceClose) s.classList.remove('open'); else s.classList.toggle('open'); },
     showView(viewId, subjectName = null) {
+        if (viewId === 'aspecto') {
+        const role = Cloud.userData ? Cloud.userData.role : 'free';
+        if (role !== 'premium' && role !== 'admin') {
+            clickSound.currentTime = 0;
+            clickSound.play();
+            alert("👑 La personalización de temas es exclusiva para miembros Premium.\n\n¡Actívala para desbloquear todos los temas!");
+            this.showView('premium');
+            return;
+        }
+    }
         if (viewId !== 'form') this.vistaAnterior = (viewId === 'subject') ? subjectName : ((viewId === 'aspecto' || viewId === 'premium' || viewId === 'admin') ? viewId : 'dashboard');
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         const viewEl = document.getElementById('view-' + viewId);
