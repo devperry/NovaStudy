@@ -460,6 +460,7 @@ const globalTasks = await Cloud.getGlobalTasks();
         
         this.resetAdminForm();
         this.loadAdminGlobalTasksList();
+        await this.sincronizarTareasGlobales();
     },
 
 
