@@ -17,7 +17,7 @@ const App = {
     materiaFiltroCompletadas: false,
     tempSubtareas: [],        // Memoria para formulario privado
         adminTempSubtareas: [],   // Memoria para formulario Admin
-    adminEditGlobalId: null  // ID de tarea global en edición (null = modo creación)
+    adminEditGlobalId: null, // ID de tarea global en edición (null = modo creación)
 
     init() {
         Store.init();

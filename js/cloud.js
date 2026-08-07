@@ -32,8 +32,6 @@ export const Cloud = {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const hoy = new Date().toISOString().split('T')[0];
-                
-                // 1. PASE VIP OFFLINE (Memoria Rápida)
                 const localData = localStorage.getItem('top1_user_data');
                 if (localData) {
                     let parsedData = JSON.parse(localData);
@@ -45,15 +43,11 @@ export const Cloud = {
                     this.userData = parsedData;
                     onLogin(this.userData);
                 }
-
-                // 2. SINCRONIZACIÓN CON EL SERVIDOR
                 try {
                     const docRef = doc(db, "users", user.uid);
                     const docSnap = await getDoc(docRef);
-                    
                     if (docSnap.exists()) {
                         let data = docSnap.data();
-                        
                         if (!data.deviceId || data.deviceId === "") {
                             await updateDoc(docRef, { deviceId: this.getDeviceId() });
                             data.deviceId = this.getDeviceId();
@@ -62,7 +56,6 @@ export const Cloud = {
                             await this.logout();
                             return;
                         }
-
                         if (data.role === 'premium' && data.premiumHasta) {
                             const hoy = new Date().toISOString().split('T')[0];
                             if (hoy > data.premiumHasta) {
@@ -71,7 +64,6 @@ export const Cloud = {
                                 alert("🛑 Tu suscripción Premium ha caducado.");
                             }
                         }
-
                         this.user = user;
                         this.userData = data;
                         localStorage.setItem('top1_user_data', JSON.stringify(data));
@@ -111,7 +103,6 @@ export const Cloud = {
 
     async logout() { await signOut(auth); },
 
-    // --- PODERES DE ADMINISTRADOR ---
     async getAllUsers() {
         try {
             const snapshot = await getDocs(collection(db, "users"));
@@ -133,7 +124,6 @@ export const Cloud = {
         return fechaStr;
     },
 
-    // NUEVO: Quitar Premium manualmente desde el panel admin
     async revokePremium(uid) {
         const docRef = doc(db, "users", uid);
         await updateDoc(docRef, { role: 'free', premiumHasta: null });
@@ -148,13 +138,15 @@ export const Cloud = {
         await addDoc(collection(db, "globalTasks"), taskData);
     },
 
-    // NUEVO: Eliminar UNA tarea global puntual desde el panel admin
+    async updateGlobalTask(globalId, taskData) {
+        const docRef = doc(db, "globalTasks", globalId);
+        await updateDoc(docRef, taskData);
+    },
+
     async deleteGlobalTask(globalId) {
         await deleteDoc(doc(db, "globalTasks", globalId));
     },
 
-    // NUEVO: Eliminar TODAS las tareas globales de golpe (fin de bimestre / JSON limpio)
-    // Reemplaza el borrado manual uno por uno en la consola de Firebase.
     async deleteAllGlobalTasks() {
         const snapshot = await getDocs(collection(db, "globalTasks"));
         if (snapshot.empty) return 0;
@@ -165,20 +157,17 @@ export const Cloud = {
     },
 
     async uploadMasterTasks(tasksArray) {
-    const batch = writeBatch(db);
-    tasksArray.forEach(task => {
-        // El "completada" y "calificacion" son personales, no se sincronizan a la nube
-        const cleanTask = { ...task };
-        delete cleanTask.completada;
-        delete cleanTask.calificacion;
-        
-        const docRef = doc(db, "globalTasks", String(task.id)); 
-        batch.set(docRef, cleanTask);
-    });
-    await batch.commit();
-},
+        const batch = writeBatch(db);
+        tasksArray.forEach(task => {
+            const cleanTask = { ...task };
+            delete cleanTask.completada;
+            delete cleanTask.calificacion;
+            const docRef = doc(db, "globalTasks", String(task.id)); 
+            batch.set(docRef, cleanTask);
+        });
+        await batch.commit();
+    },
 
-    // NUEVO: Subir Materias con sus descripciones a la Nube de forma atómica
     async uploadMasterSubjects(subjectsArray) {
         const docRef = doc(db, "globalSync", "subjectsSync");
         await setDoc(docRef, { materias: subjectsArray });
@@ -192,19 +181,10 @@ export const Cloud = {
             return tasks;
         } catch (error) {
             console.log("☁️ Modo Offline: No se descargaron tareas de la Nube.");
-            // IMPORTANTE: devolvemos null (no []) para diferenciar "sin conexión"
-            // de "no hay tareas globales". Si devolviéramos [], la sincronización
-            // pensaría que el Admin borró todo y eliminaría las tareas globales
-            // locales de cualquier usuario que esté offline.
             return null;
         }
     },
-        async updateGlobalTask(globalId, taskData) {
-        const docRef = doc(db, "globalTasks", globalId);
-        await updateDoc(docRef, taskData);
-    },
 
-    // NUEVO: Obtener Materias y descripciones de la Nube
     async getGlobalSubjects() {
         try {
             const docSnap = await getDoc(doc(db, "globalSync", "subjectsSync"));
